@@ -1,0 +1,247 @@
+{
+  "info": {
+    "name": "Easy Car Rent API",
+    "description": "Category and vehicle CRUD requests for the Easy Car Rent backend. Development-only Basic Auth credentials are provided through collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{adminUsername}}", "type": "string" },
+      { "key": "password", "value": "{{adminPassword}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "adminUsername", "value": "admin" },
+    { "key": "adminPassword", "value": "admin123" },
+    { "key": "userUsername", "value": "user" },
+    { "key": "userPassword", "value": "user123" },
+    { "key": "categoryId", "value": "" },
+    { "key": "vehicleId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('categoryId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"SUV\",\n  \"description\": \"Sport utility vehicles\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "List categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Get category by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "categories", "{{categoryId}}"] }
+          }
+        },
+        {
+          "name": "Update category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"SUV\",\n  \"description\": \"Updated description\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "categories", "{{categoryId}}"] }
+          }
+        },
+        {
+          "name": "Create category - duplicate name conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"SUV\",\n  \"description\": \"Duplicate\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Create category - validation error (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\",\n  \"description\": \"Missing name\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Delete category",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "categories", "{{categoryId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Create vehicle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('vehicleId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"1-ABC-001\",\n  \"brand\": \"Toyota\",\n  \"model\": \"Corolla\",\n  \"manufacturingYear\": 2022,\n  \"color\": \"Blue\",\n  \"dailyPrice\": 49.99,\n  \"mileage\": 15000,\n  \"categoryId\": {{categoryId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicles", "host": ["{{baseUrl}}"], "path": ["api", "vehicles"] }
+          }
+        },
+        {
+          "name": "List vehicles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/vehicles", "host": ["{{baseUrl}}"], "path": ["api", "vehicles"] }
+          }
+        },
+        {
+          "name": "Get vehicle by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}", "host": ["{{baseUrl}}"], "path": ["api", "vehicles", "{{vehicleId}}"] }
+          }
+        },
+        {
+          "name": "Update vehicle",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"1-ABC-001\",\n  \"brand\": \"Toyota\",\n  \"model\": \"Yaris\",\n  \"manufacturingYear\": 2023,\n  \"color\": \"Green\",\n  \"dailyPrice\": 55.00,\n  \"mileage\": 16000,\n  \"categoryId\": {{categoryId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}", "host": ["{{baseUrl}}"], "path": ["api", "vehicles", "{{vehicleId}}"] }
+          }
+        },
+        {
+          "name": "List vehicles by status",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/vehicles/status/AVAILABLE", "host": ["{{baseUrl}}"], "path": ["api", "vehicles", "status", "AVAILABLE"] }
+          }
+        },
+        {
+          "name": "Create vehicle - duplicate registration conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"1-ABC-001\",\n  \"brand\": \"Ford\",\n  \"model\": \"Focus\",\n  \"manufacturingYear\": 2021,\n  \"color\": \"Red\",\n  \"dailyPrice\": 39.50,\n  \"mileage\": 20000,\n  \"categoryId\": {{categoryId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicles", "host": ["{{baseUrl}}"], "path": ["api", "vehicles"] }
+          }
+        },
+        {
+          "name": "Create vehicle - invalid category (404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"1-XYZ-999\",\n  \"brand\": \"Toyota\",\n  \"model\": \"Corolla\",\n  \"manufacturingYear\": 2022,\n  \"color\": \"Blue\",\n  \"dailyPrice\": 49.99,\n  \"mileage\": 15000,\n  \"categoryId\": 999999\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicles", "host": ["{{baseUrl}}"], "path": ["api", "vehicles"] }
+          }
+        },
+        {
+          "name": "Create vehicle - validation error (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"registrationNumber\": \"\",\n  \"brand\": \"\",\n  \"model\": \"\",\n  \"manufacturingYear\": 3000,\n  \"color\": \"Blue\",\n  \"dailyPrice\": 0,\n  \"mileage\": -5,\n  \"categoryId\": {{categoryId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicles", "host": ["{{baseUrl}}"], "path": ["api", "vehicles"] }
+          }
+        },
+        {
+          "name": "Delete vehicle",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}", "host": ["{{baseUrl}}"], "path": ["api", "vehicles", "{{vehicleId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Security",
+      "item": [
+        {
+          "name": "Write without authentication (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Unauthorized\",\n  \"description\": \"No credentials\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Write as USER (403)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userUsername}}", "type": "string" },
+                { "key": "password", "value": "{{userPassword}}", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"ForbiddenForUser\",\n  \"description\": \"USER role\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Write as ADMIN (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminUsername}}", "type": "string" },
+                { "key": "password", "value": "{{adminPassword}}", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"AdminCreated\",\n  \"description\": \"ADMIN role\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+          }
+        }
+      ]
+    }
+  ]
+}

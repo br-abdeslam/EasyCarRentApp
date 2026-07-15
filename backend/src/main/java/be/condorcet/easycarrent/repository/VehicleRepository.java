@@ -13,4 +13,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     boolean existsByRegistrationNumberIgnoreCase(String registrationNumber);
 
     List<Vehicle> findAllByStatus(VehicleStatus status);
+
+    boolean existsByCategory_Id(Long categoryId);
 }

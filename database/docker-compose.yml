@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: easy-car-rent-postgres
+    environment:
+      POSTGRES_DB: easy_car_rent_db
+      POSTGRES_USER: easy_car_rent_user
+      POSTGRES_PASSWORD: easy_car_rent_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - easy_car_rent_data:/var/lib/postgresql/data
+
+volumes:
+  easy_car_rent_data:

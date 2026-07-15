@@ -18,7 +18,8 @@
     { "key": "userUsername", "value": "user" },
     { "key": "userPassword", "value": "user123" },
     { "key": "categoryId", "value": "" },
-    { "key": "vehicleId", "value": "" }
+    { "key": "vehicleId", "value": "" },
+    { "key": "customerId", "value": "" }
   ],
   "item": [
     {
@@ -181,6 +182,156 @@
           "request": {
             "method": "DELETE",
             "url": { "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}", "host": ["{{baseUrl}}"], "path": ["api", "vehicles", "{{vehicleId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Create customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('customerId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+32 470 12 34 56\",\n  \"address\": \"Rue de la Loi 16, Brussels\",\n  \"drivingLicenseNumber\": \"BE1234567\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "List customers",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Get customer by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["api", "customers", "{{customerId}}"] }
+          }
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+32 470 99 88 77\",\n  \"address\": \"Avenue Louise 1, Brussels\",\n  \"drivingLicenseNumber\": \"BE1234567\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["api", "customers", "{{customerId}}"] }
+          }
+        },
+        {
+          "name": "Delete customer",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["api", "customers", "{{customerId}}"] }
+          }
+        },
+        {
+          "name": "Create customer - duplicate email conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Roe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+32 471 00 00 00\",\n  \"address\": \"Rue Neuve 2, Brussels\",\n  \"drivingLicenseNumber\": \"BE7654321\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Create customer - duplicate driving licence conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Roe\",\n  \"email\": \"jane.roe@example.com\",\n  \"phone\": \"+32 471 00 00 00\",\n  \"address\": \"Rue Neuve 2, Brussels\",\n  \"drivingLicenseNumber\": \"BE1234567\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Create customer - invalid email validation (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"not-an-email\",\n  \"phone\": \"+32 470 12 34 56\",\n  \"address\": \"Rue de la Loi 16, Brussels\",\n  \"drivingLicenseNumber\": \"BE1234567\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Create customer - invalid phone validation (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe2@example.com\",\n  \"phone\": \"not-a-phone\",\n  \"address\": \"Rue de la Loi 16, Brussels\",\n  \"drivingLicenseNumber\": \"BE2223334\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Create customer - expired licence validation (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe3@example.com\",\n  \"phone\": \"+32 470 12 34 56\",\n  \"address\": \"Rue de la Loi 16, Brussels\",\n  \"drivingLicenseNumber\": \"BE3334445\",\n  \"drivingLicenseExpiryDate\": \"2000-01-01\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Get customer - missing (404)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/customers/999999", "host": ["{{baseUrl}}"], "path": ["api", "customers", "999999"] }
+          }
+        },
+        {
+          "name": "Write without authentication (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"noauth@example.com\",\n  \"phone\": \"+32 470 12 34 56\",\n  \"address\": \"Rue de la Loi 16, Brussels\",\n  \"drivingLicenseNumber\": \"BE4445556\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Write as USER (403)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userUsername}}", "type": "string" },
+                { "key": "password", "value": "{{userPassword}}", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"user-forbidden@example.com\",\n  \"phone\": \"+32 470 12 34 56\",\n  \"address\": \"Rue de la Loi 16, Brussels\",\n  \"drivingLicenseNumber\": \"BE5556667\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        },
+        {
+          "name": "Write as ADMIN (201)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminUsername}}", "type": "string" },
+                { "key": "password", "value": "{{adminPassword}}", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Amara\",\n  \"lastName\": \"Diallo\",\n  \"email\": \"amara.diallo@example.com\",\n  \"phone\": \"+212 6 12 34 56 78\",\n  \"address\": \"Avenue Hassan II, Casablanca\",\n  \"drivingLicenseNumber\": \"MA-556677\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
           }
         }
       ]

@@ -4,9 +4,11 @@ import be.condorcet.easycarrent.dto.CustomerRequestDto;
 import be.condorcet.easycarrent.dto.CustomerResponseDto;
 import be.condorcet.easycarrent.entity.Customer;
 import be.condorcet.easycarrent.exception.DuplicateResourceException;
+import be.condorcet.easycarrent.exception.ResourceConflictException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.CustomerMapper;
 import be.condorcet.easycarrent.repository.CustomerRepository;
+import be.condorcet.easycarrent.repository.RentalRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final RentalRepository rentalRepository;
     private final CustomerMapper mapper;
 
-    public CustomerService(CustomerRepository customerRepository, CustomerMapper mapper) {
+    public CustomerService(CustomerRepository customerRepository,
+                           RentalRepository rentalRepository,
+                           CustomerMapper mapper) {
         this.customerRepository = customerRepository;
+        this.rentalRepository = rentalRepository;
         this.mapper = mapper;
     }
 
@@ -78,6 +84,10 @@ public class CustomerService {
     @Transactional
     public void delete(Long id) {
         Customer customer = getCustomer(id);
+        if (rentalRepository.existsByCustomer_Id(id)) {
+            throw new ResourceConflictException(
+                    "Customer " + id + " cannot be deleted while it has rentals");
+        }
         customerRepository.delete(customer);
     }
 

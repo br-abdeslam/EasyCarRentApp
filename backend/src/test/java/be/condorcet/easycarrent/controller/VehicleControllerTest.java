@@ -11,7 +11,9 @@ import be.condorcet.easycarrent.config.SecurityConfig;
 import be.condorcet.easycarrent.dto.VehicleResponseDto;
 import be.condorcet.easycarrent.entity.VehicleStatus;
 import be.condorcet.easycarrent.exception.DuplicateResourceException;
+import be.condorcet.easycarrent.exception.InvalidRentalPeriodException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
+import be.condorcet.easycarrent.service.RentalService;
 import be.condorcet.easycarrent.service.VehicleService;
 import java.math.BigDecimal;
 import java.util.List;
@@ -33,6 +35,9 @@ class VehicleControllerTest {
 
     @MockitoBean
     private VehicleService vehicleService;
+
+    @MockitoBean
+    private RentalService rentalService;
 
     private static final String VALID_BODY = """
             {"registrationNumber":"1-ABC-001","brand":"Toyota","model":"Corolla",
@@ -200,5 +205,94 @@ class VehicleControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(VALID_BODY))
                 .andExpect(status().isForbidden());
+    }
+
+    // -------------------------------------------------------- Availability
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void availableAsUserReturnsOk() throws Exception {
+        when(rentalService.findAvailableVehicles(any(), any())).thenReturn(List.of(sampleResponse()));
+
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("startDate", "2026-06-10")
+                        .param("endDate", "2026-06-20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].registrationNumber").value("1-ABC-001"))
+                .andExpect(jsonPath("$[0].categoryName").value("SUV"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void availableAsAdminReturnsOk() throws Exception {
+        when(rentalService.findAvailableVehicles(any(), any())).thenReturn(List.of(sampleResponse()));
+
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("startDate", "2026-06-10")
+                        .param("endDate", "2026-06-20"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void availableUnauthenticatedReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("startDate", "2026-06-10")
+                        .param("endDate", "2026-06-20"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void availableWithMissingStartDateReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("endDate", "2026-06-20"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void availableWithMissingEndDateReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("startDate", "2026-06-10"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void availableWithInvalidDateFormatReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("startDate", "not-a-date")
+                        .param("endDate", "2026-06-20"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void availableWithInvalidPeriodReturnsBadRequest() throws Exception {
+        when(rentalService.findAvailableVehicles(any(), any()))
+                .thenThrow(new InvalidRentalPeriodException("endDate must be strictly after startDate"));
+
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("startDate", "2026-06-20")
+                        .param("endDate", "2026-06-10"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void availablePathIsNotRoutedToIdEndpoint() throws Exception {
+        // If '/available' were captured by '/{id}', findById would run and the
+        // literal would fail Long conversion. A 200 list proves the availability
+        // mapping wins, and findById is never consulted.
+        when(rentalService.findAvailableVehicles(any(), any())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/vehicles/available")
+                        .param("startDate", "2026-06-10")
+                        .param("endDate", "2026-06-20"))
+                .andExpect(status().isOk());
     }
 }

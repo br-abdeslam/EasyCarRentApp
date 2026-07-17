@@ -13,8 +13,10 @@ import be.condorcet.easycarrent.entity.Vehicle;
 import be.condorcet.easycarrent.entity.VehicleCategory;
 import be.condorcet.easycarrent.entity.VehicleStatus;
 import be.condorcet.easycarrent.exception.DuplicateResourceException;
+import be.condorcet.easycarrent.exception.ResourceConflictException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.VehicleMapper;
+import be.condorcet.easycarrent.repository.RentalRepository;
 import be.condorcet.easycarrent.repository.VehicleCategoryRepository;
 import be.condorcet.easycarrent.repository.VehicleRepository;
 import java.math.BigDecimal;
@@ -36,11 +38,14 @@ class VehicleServiceTest {
     @Mock
     private VehicleCategoryRepository categoryRepository;
 
+    @Mock
+    private RentalRepository rentalRepository;
+
     private VehicleService service;
 
     @BeforeEach
     void setUp() {
-        service = new VehicleService(vehicleRepository, categoryRepository, new VehicleMapper());
+        service = new VehicleService(vehicleRepository, categoryRepository, rentalRepository, new VehicleMapper());
     }
 
     private VehicleCategory categoryWithId(Long id, String name) {
@@ -165,15 +170,30 @@ class VehicleServiceTest {
     }
 
     @Test
-    void deleteRemovesVehicle() {
+    void deleteRemovesUnreferencedVehicle() {
         Vehicle vehicle = new Vehicle("1-ABC-001", "Toyota", "Corolla", 2022, "Blue",
                 new BigDecimal("49.99"), 15000L, categoryWithId(1L, "SUV"));
         ReflectionTestUtils.setField(vehicle, "id", 1L);
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+        when(rentalRepository.existsByVehicle_Id(1L)).thenReturn(false);
 
         service.delete(1L);
 
+        verify(rentalRepository).existsByVehicle_Id(1L);
         verify(vehicleRepository).delete(vehicle);
+    }
+
+    @Test
+    void deleteReferencedVehicleThrowsConflict() {
+        Vehicle vehicle = new Vehicle("1-ABC-001", "Toyota", "Corolla", 2022, "Blue",
+                new BigDecimal("49.99"), 15000L, categoryWithId(1L, "SUV"));
+        ReflectionTestUtils.setField(vehicle, "id", 1L);
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+        when(rentalRepository.existsByVehicle_Id(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(ResourceConflictException.class);
+        verify(vehicleRepository, never()).delete(any());
     }
 
     @Test

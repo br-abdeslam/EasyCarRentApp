@@ -15,8 +15,11 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * HTTP Basic security for the course application.
  *
- * <p>Read access to categories and vehicles requires an authenticated USER or
- * ADMIN; write access requires ADMIN. {@code /api/ping} stays public.
+ * <p>Read access to categories, vehicles, customers and rentals requires an
+ * authenticated USER or ADMIN. Category, vehicle and customer writes require
+ * ADMIN. Rental booking, updates and lifecycle transitions are allowed for USER
+ * or ADMIN, while deleting a rental requires ADMIN. {@code /api/ping} stays
+ * public.
  */
 @Configuration
 public class SecurityConfig {
@@ -27,6 +30,15 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/ping").permitAll()
+                        // Rentals: any authenticated user may read, book, update and run
+                        // lifecycle transitions; only ADMIN may delete a rental.
+                        // GET /api/vehicles/available is a read under /api/vehicles/** and is
+                        // already granted to USER and ADMIN by the vehicle GET rule below.
+                        .requestMatchers(HttpMethod.GET, "/api/rentals/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/rentals/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/rentals/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/rentals/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/rentals/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/vehicles/**", "/api/customers/**")
                         .hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/vehicles/**", "/api/customers/**")

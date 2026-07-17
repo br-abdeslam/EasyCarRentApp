@@ -11,9 +11,11 @@ import be.condorcet.easycarrent.dto.CustomerRequestDto;
 import be.condorcet.easycarrent.dto.CustomerResponseDto;
 import be.condorcet.easycarrent.entity.Customer;
 import be.condorcet.easycarrent.exception.DuplicateResourceException;
+import be.condorcet.easycarrent.exception.ResourceConflictException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.CustomerMapper;
 import be.condorcet.easycarrent.repository.CustomerRepository;
+import be.condorcet.easycarrent.repository.RentalRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -30,11 +32,14 @@ class CustomerServiceTest {
     @Mock
     private CustomerRepository customerRepository;
 
+    @Mock
+    private RentalRepository rentalRepository;
+
     private CustomerService service;
 
     @BeforeEach
     void setUp() {
-        service = new CustomerService(customerRepository, new CustomerMapper());
+        service = new CustomerService(customerRepository, rentalRepository, new CustomerMapper());
     }
 
     private Customer customerWithId(Long id, String email, String license) {
@@ -172,13 +177,26 @@ class CustomerServiceTest {
     }
 
     @Test
-    void deleteRemovesCustomer() {
+    void deleteRemovesUnreferencedCustomer() {
         Customer customer = customerWithId(1L, "a@example.com", "L1");
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(rentalRepository.existsByCustomer_Id(1L)).thenReturn(false);
 
         service.delete(1L);
 
+        verify(rentalRepository).existsByCustomer_Id(1L);
         verify(customerRepository).delete(customer);
+    }
+
+    @Test
+    void deleteReferencedCustomerThrowsConflict() {
+        Customer customer = customerWithId(1L, "a@example.com", "L1");
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(rentalRepository.existsByCustomer_Id(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(ResourceConflictException.class);
+        verify(customerRepository, never()).delete(any());
     }
 
     @Test

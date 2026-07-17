@@ -6,8 +6,10 @@ import be.condorcet.easycarrent.entity.Vehicle;
 import be.condorcet.easycarrent.entity.VehicleCategory;
 import be.condorcet.easycarrent.entity.VehicleStatus;
 import be.condorcet.easycarrent.exception.DuplicateResourceException;
+import be.condorcet.easycarrent.exception.ResourceConflictException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.VehicleMapper;
+import be.condorcet.easycarrent.repository.RentalRepository;
 import be.condorcet.easycarrent.repository.VehicleCategoryRepository;
 import be.condorcet.easycarrent.repository.VehicleRepository;
 import java.util.List;
@@ -23,13 +25,16 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final VehicleCategoryRepository categoryRepository;
+    private final RentalRepository rentalRepository;
     private final VehicleMapper mapper;
 
     public VehicleService(VehicleRepository vehicleRepository,
                           VehicleCategoryRepository categoryRepository,
+                          RentalRepository rentalRepository,
                           VehicleMapper mapper) {
         this.vehicleRepository = vehicleRepository;
         this.categoryRepository = categoryRepository;
+        this.rentalRepository = rentalRepository;
         this.mapper = mapper;
     }
 
@@ -78,6 +83,10 @@ public class VehicleService {
     @Transactional
     public void delete(Long id) {
         Vehicle vehicle = getVehicle(id);
+        if (rentalRepository.existsByVehicle_Id(id)) {
+            throw new ResourceConflictException(
+                    "Vehicle " + id + " cannot be deleted while it has rentals");
+        }
         vehicleRepository.delete(vehicle);
     }
 

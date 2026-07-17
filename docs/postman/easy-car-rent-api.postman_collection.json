@@ -19,7 +19,10 @@
     { "key": "userPassword", "value": "user123" },
     { "key": "categoryId", "value": "" },
     { "key": "vehicleId", "value": "" },
-    { "key": "customerId", "value": "" }
+    { "key": "customerId", "value": "" },
+    { "key": "rentalId", "value": "" },
+    { "key": "rentalStartDate", "value": "2026-08-01" },
+    { "key": "rentalEndDate", "value": "2026-08-10" }
   ],
   "item": [
     {
@@ -332,6 +335,195 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Amara\",\n  \"lastName\": \"Diallo\",\n  \"email\": \"amara.diallo@example.com\",\n  \"phone\": \"+212 6 12 34 56 78\",\n  \"address\": \"Avenue Hassan II, Casablanca\",\n  \"drivingLicenseNumber\": \"MA-556677\",\n  \"drivingLicenseExpiryDate\": \"2999-12-31\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/customers", "host": ["{{baseUrl}}"], "path": ["api", "customers"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rentals",
+      "item": [
+        {
+          "name": "Create Rental as USER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('rentalId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Create Rental as ADMIN",
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "List Rentals",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Get Rental by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}"] }
+          }
+        },
+        {
+          "name": "Update Rental",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"2026-08-12\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}"] }
+          }
+        },
+        {
+          "name": "Start Rental",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}/start", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}", "start"] }
+          }
+        },
+        {
+          "name": "Complete Rental",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}/complete", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}", "complete"] }
+          }
+        },
+        {
+          "name": "Cancel Rental",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}/cancel", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}", "cancel"] }
+          }
+        },
+        {
+          "name": "Delete Rental as USER - forbidden (403)",
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}"] }
+          }
+        },
+        {
+          "name": "Delete Rental as ADMIN",
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}"] }
+          }
+        },
+        {
+          "name": "List available vehicles for a date range",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/vehicles/available?startDate={{rentalStartDate}}&endDate={{rentalEndDate}}", "host": ["{{baseUrl}}"], "path": ["api", "vehicles", "available"], "query": [ { "key": "startDate", "value": "{{rentalStartDate}}" }, { "key": "endDate", "value": "{{rentalEndDate}}" } ] }
+          }
+        },
+        {
+          "name": "Create Rental - invalid date period (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalStartDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Create Rental - missing customer (404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": 999999\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Create Rental - missing vehicle (404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": 999999,\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Create Rental - expired licence conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Create Rental - maintenance vehicle conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Create Rental - inactive vehicle conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Create Rental - overlap conflict (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startDate\": \"{{rentalStartDate}}\",\n  \"endDate\": \"{{rentalEndDate}}\",\n  \"vehicleId\": {{vehicleId}},\n  \"customerId\": {{customerId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        },
+        {
+          "name": "Get Rental - missing (404)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/rentals/999999", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "999999"] }
+          }
+        },
+        {
+          "name": "Invalid transition - complete a PLANNED rental (409)",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/rentals/{{rentalId}}/complete", "host": ["{{baseUrl}}"], "path": ["api", "rentals", "{{rentalId}}", "complete"] }
+          }
+        },
+        {
+          "name": "List Rentals without authentication (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
           }
         }
       ]

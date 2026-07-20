@@ -110,6 +110,47 @@ public class Payment {
         return rental;
     }
 
+    // ---------------------------------------------------------------------
+    // Controlled lifecycle transitions. Whether a transition is allowed from
+    // the current status is decided by the service layer; these methods only
+    // apply the direct state change and never touch id, amount, paymentMethod,
+    // createdAt or the rental.
+    // ---------------------------------------------------------------------
+
+    /**
+     * Marks the payment as {@link PaymentStatus#PAID} at the given time. The
+     * timestamp must not be null; it is validated before any state changes.
+     */
+    public void markPaid(LocalDateTime paidAt) {
+        Objects.requireNonNull(paidAt, "paidAt must not be null");
+        this.status = PaymentStatus.PAID;
+        this.paidAt = paidAt;
+    }
+
+    /**
+     * Marks the payment as {@link PaymentStatus#FAILED}. {@code paidAt} is left
+     * unchanged (it is null for a payment that was still pending).
+     */
+    public void markFailed() {
+        this.status = PaymentStatus.FAILED;
+    }
+
+    /**
+     * Returns a failed payment to {@link PaymentStatus#PENDING} so it can be
+     * attempted again. {@code paidAt} is left unchanged (null).
+     */
+    public void retry() {
+        this.status = PaymentStatus.PENDING;
+    }
+
+    /**
+     * Marks a paid payment as {@link PaymentStatus#REFUNDED}, preserving the
+     * original {@code paidAt} timestamp.
+     */
+    public void refund() {
+        this.status = PaymentStatus.REFUNDED;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {

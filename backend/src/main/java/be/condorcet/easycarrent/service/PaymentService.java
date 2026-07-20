@@ -3,6 +3,7 @@ package be.condorcet.easycarrent.service;
 import be.condorcet.easycarrent.dto.PaymentRequestDto;
 import be.condorcet.easycarrent.dto.PaymentResponseDto;
 import be.condorcet.easycarrent.entity.Payment;
+import be.condorcet.easycarrent.entity.PaymentStatus;
 import be.condorcet.easycarrent.entity.Rental;
 import be.condorcet.easycarrent.entity.RentalStatus;
 import be.condorcet.easycarrent.exception.ResourceConflictException;
@@ -12,6 +13,7 @@ import be.condorcet.easycarrent.repository.PaymentRepository;
 import be.condorcet.easycarrent.repository.RentalRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -93,6 +95,53 @@ public class PaymentService {
     }
 
     // ---------------------------------------------------------------------
+    // Lifecycle transitions
+    // ---------------------------------------------------------------------
+
+    @Transactional
+    public PaymentResponseDto markPaid(Long id) {
+        Payment payment = getPayment(id);
+        requireStatus(payment, PaymentStatus.PENDING, "marked as paid");
+        payment.markPaid(LocalDateTime.now());
+        return paymentMapper.toResponse(paymentRepository.save(payment));
+    }
+
+    @Transactional
+    public PaymentResponseDto markFailed(Long id) {
+        Payment payment = getPayment(id);
+        requireStatus(payment, PaymentStatus.PENDING, "marked as failed");
+        payment.markFailed();
+        return paymentMapper.toResponse(paymentRepository.save(payment));
+    }
+
+    @Transactional
+    public PaymentResponseDto retry(Long id) {
+        Payment payment = getPayment(id);
+        requireStatus(payment, PaymentStatus.FAILED, "retried");
+        payment.retry();
+        return paymentMapper.toResponse(paymentRepository.save(payment));
+    }
+
+    @Transactional
+    public PaymentResponseDto refund(Long id) {
+        Payment payment = getPayment(id);
+        requireStatus(payment, PaymentStatus.PAID, "refunded");
+        payment.refund();
+        return paymentMapper.toResponse(paymentRepository.save(payment));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Payment payment = getPayment(id);
+        PaymentStatus status = payment.getStatus();
+        if (status == PaymentStatus.PAID || status == PaymentStatus.REFUNDED) {
+            throw new ResourceConflictException(
+                    "A payment that is " + status + " cannot be deleted");
+        }
+        paymentRepository.delete(payment);
+    }
+
+    // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
 
@@ -129,6 +178,14 @@ public class PaymentService {
             throw new IllegalStateException("Rental " + rental.getId() + " has no total price");
         }
         return totalPrice.setScale(MONETARY_SCALE, RoundingMode.HALF_UP);
+    }
+
+    private void requireStatus(Payment payment, PaymentStatus required, String action) {
+        if (payment.getStatus() != required) {
+            throw new ResourceConflictException(
+                    "A payment can only be " + action + " from " + required
+                            + " but payment " + payment.getId() + " is " + payment.getStatus());
+        }
     }
 
     private Payment getPayment(Long id) {

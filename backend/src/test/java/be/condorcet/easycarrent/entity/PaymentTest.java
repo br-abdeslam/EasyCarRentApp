@@ -1,9 +1,11 @@
 package be.condorcet.easycarrent.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -72,5 +74,77 @@ class PaymentTest {
 
         assertThat(text).contains("7").contains("PENDING");
         assertThat(text).doesNotContain("Rental").doesNotContain("200").doesNotContain("CARD");
+    }
+
+    // ------------------------------------------------------------------ lifecycle
+
+    private Payment pendingPayment() {
+        return new Payment(sampleRental(), PaymentMethod.CARD, new BigDecimal("200.00"));
+    }
+
+    @Test
+    void markPaidSetsPaidStatusAndAssignsPaidAt() {
+        LocalDateTime paidAt = LocalDateTime.of(2026, 8, 2, 9, 15);
+        Payment payment = pendingPayment();
+
+        payment.markPaid(paidAt);
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(payment.getPaidAt()).isEqualTo(paidAt);
+    }
+
+    @Test
+    void markPaidRejectsNullTimestampWithoutChangingStatus() {
+        Payment payment = pendingPayment();
+
+        assertThatThrownBy(() -> payment.markPaid(null)).isInstanceOf(NullPointerException.class);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(payment.getPaidAt()).isNull();
+    }
+
+    @Test
+    void markFailedSetsFailedStatusAndLeavesPaidAtNull() {
+        Payment payment = pendingPayment();
+
+        payment.markFailed();
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+        assertThat(payment.getPaidAt()).isNull();
+    }
+
+    @Test
+    void retrySetsPendingStatusAndLeavesPaidAtNull() {
+        Payment payment = pendingPayment();
+        payment.markFailed();
+
+        payment.retry();
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(payment.getPaidAt()).isNull();
+    }
+
+    @Test
+    void refundSetsRefundedStatusAndPreservesPaidAt() {
+        LocalDateTime paidAt = LocalDateTime.of(2026, 8, 2, 9, 15);
+        Payment payment = pendingPayment();
+        payment.markPaid(paidAt);
+
+        payment.refund();
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.REFUNDED);
+        assertThat(payment.getPaidAt()).isEqualTo(paidAt);
+    }
+
+    @Test
+    void lifecycleMethodsPreserveAmountMethodAndRental() {
+        Rental rental = sampleRental();
+        Payment payment = new Payment(rental, PaymentMethod.CARD, new BigDecimal("200.00"));
+
+        payment.markPaid(LocalDateTime.of(2026, 8, 2, 9, 15));
+        payment.refund();
+
+        assertThat(payment.getAmount()).isEqualByComparingTo("200.00");
+        assertThat(payment.getPaymentMethod()).isEqualTo(PaymentMethod.CARD);
+        assertThat(payment.getRental()).isSameAs(rental);
     }
 }

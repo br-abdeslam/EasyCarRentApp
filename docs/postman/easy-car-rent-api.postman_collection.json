@@ -22,7 +22,17 @@
     { "key": "customerId", "value": "" },
     { "key": "rentalId", "value": "" },
     { "key": "rentalStartDate", "value": "2026-08-01" },
-    { "key": "rentalEndDate", "value": "2026-08-10" }
+    { "key": "rentalEndDate", "value": "2026-08-10" },
+    { "key": "paymentId", "value": "" },
+    { "key": "paymentRentalId", "value": "" },
+    { "key": "completedRentalId", "value": "" },
+    { "key": "plannedRentalId", "value": "" },
+    { "key": "cancelledRentalId", "value": "" },
+    { "key": "pendingPaymentId", "value": "" },
+    { "key": "failedPaymentId", "value": "" },
+    { "key": "paidPaymentId", "value": "" },
+    { "key": "refundedPaymentId", "value": "" },
+    { "key": "missingPaymentId", "value": "999999" }
   ],
   "item": [
     {
@@ -524,6 +534,399 @@
             "auth": { "type": "noauth" },
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/rentals", "host": ["{{baseUrl}}"], "path": ["api", "rentals"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "List Payments as USER",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200 OK', () => pm.response.to.have.status(200));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Get Payment by ID as USER",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200 OK', () => pm.response.to.have.status(200));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{paymentId}}"] }
+          }
+        },
+        {
+          "name": "Get Payment by Rental ID as USER",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200 OK', () => pm.response.to.have.status(200));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/payments/rental/{{paymentRentalId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "rental", "{{paymentRentalId}}"] }
+          }
+        },
+        {
+          "name": "Get Missing Payment (404)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('404 Not Found', () => pm.response.to.have.status(404));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{missingPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{missingPaymentId}}"] }
+          }
+        },
+        {
+          "name": "Unauthenticated Payment Request (401)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));" ] } } ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment for ACTIVE Rental as USER",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "const body = pm.response.json();",
+            "pm.test('status is PENDING', () => pm.expect(body.status).to.eql('PENDING'));",
+            "pm.test('amount is present', () => pm.expect(body.amount).to.not.be.undefined);",
+            "pm.test('amount was not sent by the request', () => pm.expect(pm.request.body.raw).to.not.include('amount'));",
+            "pm.test('paidAt is null', () => pm.expect(body.paidAt).to.be.null);",
+            "pm.test('rentalId matches request', () => pm.expect(String(body.rentalId)).to.eql(pm.collectionVariables.get('paymentRentalId')));",
+            "pm.test('paymentMethod matches', () => pm.expect(body.paymentMethod).to.eql('CARD'));",
+            "pm.collectionVariables.set('paymentId', body.id);"
+          ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{paymentRentalId}},\n  \"paymentMethod\": \"CARD\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment for COMPLETED Rental as ADMIN",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "const body = pm.response.json();",
+            "pm.test('status is PENDING', () => pm.expect(body.status).to.eql('PENDING'));",
+            "pm.test('paymentMethod is BANK_TRANSFER', () => pm.expect(body.paymentMethod).to.eql('BANK_TRANSFER'));"
+          ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{completedRentalId}},\n  \"paymentMethod\": \"BANK_TRANSFER\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment for PLANNED Rental - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{plannedRentalId}},\n  \"paymentMethod\": \"CARD\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment for CANCELLED Rental - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{cancelledRentalId}},\n  \"paymentMethod\": \"CARD\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Duplicate Payment - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{paymentRentalId}},\n  \"paymentMethod\": \"CARD\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment for Missing Rental (404)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('404 Not Found', () => pm.response.to.have.status(404));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": 999999,\n  \"paymentMethod\": \"CARD\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment without rentalId - validation (400)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('400 Bad Request', () => pm.response.to.have.status(400));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"paymentMethod\": \"CARD\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment without paymentMethod - validation (400)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('400 Bad Request', () => pm.response.to.have.status(400));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{paymentRentalId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Create Payment with Invalid paymentMethod - validation (400)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('400 Bad Request', () => pm.response.to.have.status(400));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{paymentRentalId}},\n  \"paymentMethod\": \"BITCOIN\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Unauthenticated Payment Creation (401)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));" ] } } ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rentalId\": {{paymentRentalId}},\n  \"paymentMethod\": \"CARD\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments", "host": ["{{baseUrl}}"], "path": ["api", "payments"] }
+          }
+        },
+        {
+          "name": "Mark Payment Paid as USER",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('status is PAID', () => pm.expect(body.status).to.eql('PAID'));",
+            "pm.test('paidAt is not null', () => pm.expect(body.paidAt).to.not.be.null);"
+          ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}/pay", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}", "pay"] }
+          }
+        },
+        {
+          "name": "Mark Payment Paid as ADMIN",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200 OK', () => pm.response.to.have.status(200));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}/pay", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}", "pay"] }
+          }
+        },
+        {
+          "name": "Invalid Pay Transition - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paidPaymentId}}/pay", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{paidPaymentId}}", "pay"] }
+          }
+        },
+        {
+          "name": "Mark Missing Payment Paid (404)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('404 Not Found', () => pm.response.to.have.status(404));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{missingPaymentId}}/pay", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{missingPaymentId}}", "pay"] }
+          }
+        },
+        {
+          "name": "Unauthenticated Pay (401)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));" ] } } ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}/pay", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}", "pay"] }
+          }
+        },
+        {
+          "name": "Mark Payment Failed as USER",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('status is FAILED', () => pm.expect(body.status).to.eql('FAILED'));",
+            "pm.test('paidAt remains null', () => pm.expect(body.paidAt).to.be.null);"
+          ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}/fail", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}", "fail"] }
+          }
+        },
+        {
+          "name": "Invalid Fail Transition - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paidPaymentId}}/fail", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{paidPaymentId}}", "fail"] }
+          }
+        },
+        {
+          "name": "Unauthenticated Fail (401)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));" ] } } ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}/fail", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}", "fail"] }
+          }
+        },
+        {
+          "name": "Retry Failed Payment as USER",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('status is PENDING', () => pm.expect(body.status).to.eql('PENDING'));",
+            "pm.test('paidAt remains null', () => pm.expect(body.paidAt).to.be.null);"
+          ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{failedPaymentId}}/retry", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{failedPaymentId}}", "retry"] }
+          }
+        },
+        {
+          "name": "Invalid Retry Transition - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}/retry", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}", "retry"] }
+          }
+        },
+        {
+          "name": "Unauthenticated Retry (401)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));" ] } } ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{failedPaymentId}}/retry", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{failedPaymentId}}", "retry"] }
+          }
+        },
+        {
+          "name": "Refund Payment as ADMIN",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('status is REFUNDED', () => pm.expect(body.status).to.eql('REFUNDED'));",
+            "pm.test('paidAt remains present', () => pm.expect(body.paidAt).to.not.be.null);"
+          ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paidPaymentId}}/refund", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{paidPaymentId}}", "refund"] }
+          }
+        },
+        {
+          "name": "Refund Payment as USER - forbidden (403)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('403 Forbidden', () => pm.response.to.have.status(403));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paidPaymentId}}/refund", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{paidPaymentId}}", "refund"] }
+          }
+        },
+        {
+          "name": "Invalid Refund Transition - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}/refund", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}", "refund"] }
+          }
+        },
+        {
+          "name": "Unauthenticated Refund (401)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));" ] } } ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paidPaymentId}}/refund", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{paidPaymentId}}", "refund"] }
+          }
+        },
+        {
+          "name": "Delete PENDING Payment as ADMIN",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('204 No Content', () => pm.response.to.have.status(204));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}"] }
+          }
+        },
+        {
+          "name": "Delete FAILED Payment as ADMIN",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('204 No Content', () => pm.response.to.have.status(204));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{failedPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{failedPaymentId}}"] }
+          }
+        },
+        {
+          "name": "Delete PAID Payment as ADMIN - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paidPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{paidPaymentId}}"] }
+          }
+        },
+        {
+          "name": "Delete REFUNDED Payment as ADMIN - conflict (409)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('409 Conflict', () => pm.response.to.have.status(409));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{refundedPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{refundedPaymentId}}"] }
+          }
+        },
+        {
+          "name": "Delete Payment as USER - forbidden (403)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('403 Forbidden', () => pm.response.to.have.status(403));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{userUsername}}", "type": "string" }, { "key": "password", "value": "{{userPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}"] }
+          }
+        },
+        {
+          "name": "Delete Missing Payment (404)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('404 Not Found', () => pm.response.to.have.status(404));" ] } } ],
+          "request": {
+            "auth": { "type": "basic", "basic": [ { "key": "username", "value": "{{adminUsername}}", "type": "string" }, { "key": "password", "value": "{{adminPassword}}", "type": "string" } ] },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{missingPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{missingPaymentId}}"] }
+          }
+        },
+        {
+          "name": "Unauthenticated Delete (401)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));" ] } } ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/payments/{{pendingPaymentId}}", "host": ["{{baseUrl}}"], "path": ["api", "payments", "{{pendingPaymentId}}"] }
           }
         }
       ]

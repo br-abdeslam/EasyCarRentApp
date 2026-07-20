@@ -15,11 +15,12 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * HTTP Basic security for the course application.
  *
- * <p>Read access to categories, vehicles, customers and rentals requires an
- * authenticated USER or ADMIN. Category, vehicle and customer writes require
- * ADMIN. Rental booking, updates and lifecycle transitions are allowed for USER
- * or ADMIN, while deleting a rental requires ADMIN. {@code /api/ping} stays
- * public.
+ * <p>Read access to categories, vehicles, customers, rentals and payments
+ * requires an authenticated USER or ADMIN. Category, vehicle and customer writes
+ * require ADMIN. Rental booking, updates and lifecycle transitions are allowed
+ * for USER or ADMIN, while deleting a rental requires ADMIN. Payment creation and
+ * the normal lifecycle (pay/fail/retry) are allowed for USER or ADMIN, while
+ * refunding and deleting a payment require ADMIN. {@code /api/ping} stays public.
  */
 @Configuration
 public class SecurityConfig {
@@ -39,6 +40,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/rentals/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/rentals/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/rentals/**").hasRole("ADMIN")
+                        // Payments: any authenticated user may read, create and run the normal
+                        // lifecycle (pay/fail/retry); refunding and deleting a payment require
+                        // ADMIN. The ADMIN-only refund matcher is declared before the general
+                        // PATCH rule so it is not shadowed by it.
+                        .requestMatchers(HttpMethod.GET, "/api/payments/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/payments/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/payments/*/refund").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/payments/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/payments/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/vehicles/**", "/api/customers/**")
                         .hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/vehicles/**", "/api/customers/**")

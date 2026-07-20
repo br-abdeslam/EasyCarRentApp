@@ -319,4 +319,92 @@ class PaymentControllerTest {
         mockMvc.perform(delete("/api/payments/100"))
                 .andExpect(status().isUnauthorized());
     }
+
+    // -------------------------------------------------------------- Authorization (USER vs ADMIN)
+    // Reads, create and the normal lifecycle (pay/fail/retry) are open to USER and
+    // ADMIN; refund and delete are ADMIN-only. ADMIN success paths are already
+    // covered by the tests above.
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void listAsUserReturnsOk() throws Exception {
+        when(paymentService.findAll()).thenReturn(List.of(pending()));
+
+        mockMvc.perform(get("/api/payments")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getByIdAsUserReturnsOk() throws Exception {
+        when(paymentService.findById(100L)).thenReturn(pending());
+
+        mockMvc.perform(get("/api/payments/100")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getByRentalIdAsUserReturnsOk() throws Exception {
+        when(paymentService.findByRentalId(42L)).thenReturn(pending());
+
+        mockMvc.perform(get("/api/payments/rental/42")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void createAsUserReturnsCreated() throws Exception {
+        when(paymentService.create(any())).thenReturn(pending());
+
+        mockMvc.perform(post("/api/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_BODY))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void payAsUserReturnsOk() throws Exception {
+        when(paymentService.markPaid(100L)).thenReturn(sample(PaymentStatus.PAID, LocalDateTime.of(2026, 8, 2, 9, 0)));
+
+        mockMvc.perform(patch("/api/payments/100/pay")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void failAsUserReturnsOk() throws Exception {
+        when(paymentService.markFailed(100L)).thenReturn(sample(PaymentStatus.FAILED, null));
+
+        mockMvc.perform(patch("/api/payments/100/fail")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void retryAsUserReturnsOk() throws Exception {
+        when(paymentService.retry(100L)).thenReturn(pending());
+
+        mockMvc.perform(patch("/api/payments/100/retry")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void refundAsUserReturnsForbiddenAndDoesNotCallService() throws Exception {
+        mockMvc.perform(patch("/api/payments/100/refund"))
+                .andExpect(status().isForbidden());
+
+        verify(paymentService, never()).refund(any());
+    }
+
+    @Test
+    void refundUnauthenticatedReturnsUnauthorized() throws Exception {
+        mockMvc.perform(patch("/api/payments/100/refund"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void deleteAsUserReturnsForbiddenAndDoesNotCallService() throws Exception {
+        mockMvc.perform(delete("/api/payments/100"))
+                .andExpect(status().isForbidden());
+
+        verify(paymentService, never()).delete(any());
+    }
 }

@@ -4,6 +4,7 @@ import be.condorcet.easycarrent.dto.RentalRequestDto;
 import be.condorcet.easycarrent.dto.RentalResponseDto;
 import be.condorcet.easycarrent.dto.VehicleResponseDto;
 import be.condorcet.easycarrent.entity.Customer;
+import be.condorcet.easycarrent.entity.MaintenanceStatus;
 import be.condorcet.easycarrent.entity.Rental;
 import be.condorcet.easycarrent.entity.RentalStatus;
 import be.condorcet.easycarrent.entity.Vehicle;
@@ -14,6 +15,7 @@ import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.RentalMapper;
 import be.condorcet.easycarrent.mapper.VehicleMapper;
 import be.condorcet.easycarrent.repository.CustomerRepository;
+import be.condorcet.easycarrent.repository.MaintenanceRecordRepository;
 import be.condorcet.easycarrent.repository.RentalRepository;
 import be.condorcet.easycarrent.repository.VehicleRepository;
 import java.math.BigDecimal;
@@ -45,6 +47,10 @@ public class RentalService {
     private static final Set<RentalStatus> BLOCKING_STATUSES =
             Set.of(RentalStatus.PLANNED, RentalStatus.ACTIVE);
 
+    /** Maintenance statuses that block a vehicle for a rental period. COMPLETED never blocks. */
+    private static final Set<MaintenanceStatus> BLOCKING_MAINTENANCE_STATUSES =
+            Set.of(MaintenanceStatus.PLANNED, MaintenanceStatus.IN_PROGRESS);
+
     /** Vehicle states that may be considered for a future booking. */
     private static final Set<VehicleStatus> BOOKABLE_STATUSES =
             Set.of(VehicleStatus.AVAILABLE, VehicleStatus.RENTED);
@@ -54,17 +60,20 @@ public class RentalService {
     private final RentalRepository rentalRepository;
     private final VehicleRepository vehicleRepository;
     private final CustomerRepository customerRepository;
+    private final MaintenanceRecordRepository maintenanceRecordRepository;
     private final RentalMapper rentalMapper;
     private final VehicleMapper vehicleMapper;
 
     public RentalService(RentalRepository rentalRepository,
                          VehicleRepository vehicleRepository,
                          CustomerRepository customerRepository,
+                         MaintenanceRecordRepository maintenanceRecordRepository,
                          RentalMapper rentalMapper,
                          VehicleMapper vehicleMapper) {
         this.rentalRepository = rentalRepository;
         this.vehicleRepository = vehicleRepository;
         this.customerRepository = customerRepository;
+        this.maintenanceRecordRepository = maintenanceRecordRepository;
         this.rentalMapper = rentalMapper;
         this.vehicleMapper = vehicleMapper;
     }
@@ -109,6 +118,7 @@ public class RentalService {
         validateLicence(customer, request.endDate());
         validateVehicleBookable(vehicle);
         rejectOverlapForCreate(vehicle, request.startDate(), request.endDate());
+        rejectMaintenanceOverlap(vehicle, request.startDate(), request.endDate());
 
         BigDecimal totalPrice = calculateTotalPrice(vehicle, request.startDate(), request.endDate());
         Rental rental = rentalMapper.toEntity(request, vehicle, customer, totalPrice);
@@ -128,6 +138,7 @@ public class RentalService {
         validateLicence(customer, request.endDate());
         validateVehicleBookable(vehicle);
         rejectOverlapForUpdate(vehicle, rental.getId(), request.startDate(), request.endDate());
+        rejectMaintenanceOverlap(vehicle, request.startDate(), request.endDate());
 
         BigDecimal totalPrice = calculateTotalPrice(vehicle, request.startDate(), request.endDate());
         rentalMapper.updateEntity(rental, request, vehicle, customer, totalPrice);
@@ -236,6 +247,23 @@ public class RentalService {
         if (overlaps > 0) {
             throw new ResourceConflictException(
                     "The vehicle already has a planned or active rental overlapping the requested period");
+        }
+    }
+
+    /**
+     * Rejects a rental period that overlaps a PLANNED or IN_PROGRESS maintenance
+     * record for the same vehicle. Overlap is inclusive:
+     * {@code maintenance.startDate <= rental.endDate AND maintenance.endDate >= rental.startDate}.
+     * COMPLETED maintenance never blocks. No maintenance record is modified.
+     */
+    private void rejectMaintenanceOverlap(Vehicle vehicle, LocalDate startDate, LocalDate endDate) {
+        boolean overlaps = maintenanceRecordRepository
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        vehicle.getId(), BLOCKING_MAINTENANCE_STATUSES, endDate, startDate);
+        if (overlaps) {
+            throw new ResourceConflictException(
+                    "Vehicle " + vehicle.getId() + " has maintenance overlapping the requested period "
+                            + startDate + " to " + endDate);
         }
     }
 

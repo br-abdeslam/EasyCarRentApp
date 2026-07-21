@@ -107,6 +107,23 @@ public class MaintenanceRecord {
         return vehicle;
     }
 
+    // ---------------------------------------------------------------------
+    // Controlled lifecycle transitions. Whether a transition is allowed from
+    // the current status, and the matching vehicle-status change, are decided
+    // by the service layer; these methods only apply the direct status change
+    // and never touch id, vehicle, description, dates or cost.
+    // ---------------------------------------------------------------------
+
+    /** Marks the maintenance as {@link MaintenanceStatus#IN_PROGRESS}. */
+    public void start() {
+        this.status = MaintenanceStatus.IN_PROGRESS;
+    }
+
+    /** Marks the maintenance as {@link MaintenanceStatus#COMPLETED}. */
+    public void complete() {
+        this.status = MaintenanceStatus.COMPLETED;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {

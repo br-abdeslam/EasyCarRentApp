@@ -423,4 +423,235 @@ class MaintenanceRecordServiceTest {
         assertThatThrownBy(() -> service.create(validRequest(7L))).isInstanceOf(ResourceConflictException.class);
         verifyNeverSaved();
     }
+
+    // ==================================================================== Lifecycle: start
+
+    private void assertNeitherSaved() {
+        verify(maintenanceRecordRepository, never()).save(any(MaintenanceRecord.class));
+        verify(vehicleRepository, never()).save(any(Vehicle.class));
+    }
+
+    @Test
+    void startTransitionsRecordAndVehicleAndReturnsInProgress() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.AVAILABLE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.PLANNED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        MaintenanceRecordResponseDto response = service.start(1L);
+
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.MAINTENANCE);
+        verify(maintenanceRecordRepository, times(1)).save(record);
+        verify(vehicleRepository, times(1)).save(vehicle);
+        assertThat(response.status()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+        assertThat(response.vehicleId()).isEqualTo(7L);
+        assertThat(vehicle.getRegistrationNumber()).isEqualTo("REG-7");
+    }
+
+    @Test
+    void startRejectsInProgressRecord() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.AVAILABLE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.IN_PROGRESS);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.start(1L))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessageContaining("PLANNED").hasMessageContaining("IN_PROGRESS");
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
+    }
+
+    @Test
+    void startRejectsCompletedRecord() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.AVAILABLE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.COMPLETED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.start(1L)).isInstanceOf(ResourceConflictException.class);
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.COMPLETED);
+    }
+
+    @Test
+    void startRejectsRentedVehicle() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.RENTED);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.PLANNED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.start(1L))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessageContaining("1").hasMessageContaining("7").hasMessageContaining("RENTED");
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.PLANNED);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.RENTED);
+    }
+
+    @Test
+    void startRejectsMaintenanceVehicle() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.MAINTENANCE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.PLANNED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.start(1L)).isInstanceOf(ResourceConflictException.class);
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.PLANNED);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.MAINTENANCE);
+    }
+
+    @Test
+    void startRejectsInactiveVehicle() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.INACTIVE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.PLANNED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.start(1L)).isInstanceOf(ResourceConflictException.class);
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.PLANNED);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.INACTIVE);
+    }
+
+    @Test
+    void startThrowsWhenRecordMissing() {
+        when(maintenanceRecordRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.start(99L)).isInstanceOf(ResourceNotFoundException.class);
+        assertNeitherSaved();
+    }
+
+    // ==================================================================== Lifecycle: complete
+
+    @Test
+    void completeTransitionsRecordAndVehicleAndReturnsCompleted() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.MAINTENANCE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.IN_PROGRESS);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        MaintenanceRecordResponseDto response = service.complete(1L);
+
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.COMPLETED);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
+        verify(maintenanceRecordRepository, times(1)).save(record);
+        verify(vehicleRepository, times(1)).save(vehicle);
+        assertThat(response.status()).isEqualTo(MaintenanceStatus.COMPLETED);
+        assertThat(response.vehicleId()).isEqualTo(7L);
+        assertThat(vehicle.getRegistrationNumber()).isEqualTo("REG-7");
+    }
+
+    @Test
+    void completeRejectsPlannedRecord() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.MAINTENANCE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.PLANNED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.complete(1L))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessageContaining("IN_PROGRESS").hasMessageContaining("PLANNED");
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.PLANNED);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.MAINTENANCE);
+    }
+
+    @Test
+    void completeRejectsCompletedRecord() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.MAINTENANCE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.COMPLETED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.complete(1L)).isInstanceOf(ResourceConflictException.class);
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.COMPLETED);
+    }
+
+    @Test
+    void completeRejectsAvailableVehicle() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.AVAILABLE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.IN_PROGRESS);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.complete(1L))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessageContaining("1").hasMessageContaining("7").hasMessageContaining("AVAILABLE");
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
+    }
+
+    @Test
+    void completeRejectsRentedVehicle() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.RENTED);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.IN_PROGRESS);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.complete(1L)).isInstanceOf(ResourceConflictException.class);
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.RENTED);
+    }
+
+    @Test
+    void completeRejectsInactiveVehicle() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.INACTIVE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.IN_PROGRESS);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.complete(1L)).isInstanceOf(ResourceConflictException.class);
+        assertNeitherSaved();
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.INACTIVE);
+    }
+
+    @Test
+    void completeThrowsWhenRecordMissing() {
+        when(maintenanceRecordRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.complete(99L)).isInstanceOf(ResourceNotFoundException.class);
+        assertNeitherSaved();
+    }
+
+    // ==================================================================== Deletion
+
+    @Test
+    void deletePlannedRecordSucceedsAndLeavesVehicleUnchanged() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.AVAILABLE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.PLANNED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        service.delete(1L);
+
+        verify(maintenanceRecordRepository, times(1)).delete(record);
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
+        verify(vehicleRepository, never()).save(any(Vehicle.class));
+        verify(vehicleRepository, never()).delete(any(Vehicle.class));
+    }
+
+    @Test
+    void deleteRejectsInProgressRecord() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.MAINTENANCE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.IN_PROGRESS);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessageContaining("PLANNED").hasMessageContaining("IN_PROGRESS");
+        verify(maintenanceRecordRepository, never()).delete(any(MaintenanceRecord.class));
+    }
+
+    @Test
+    void deleteRejectsCompletedRecord() {
+        Vehicle vehicle = vehicle(7L, VehicleStatus.AVAILABLE);
+        MaintenanceRecord record = record(1L, vehicle, "Work", START, END, "100.00", MaintenanceStatus.COMPLETED);
+        when(maintenanceRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(ResourceConflictException.class);
+        verify(maintenanceRecordRepository, never()).delete(any(MaintenanceRecord.class));
+    }
+
+    @Test
+    void deleteThrowsWhenRecordMissing() {
+        when(maintenanceRecordRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.delete(99L)).isInstanceOf(ResourceNotFoundException.class);
+        verify(maintenanceRecordRepository, never()).delete(any(MaintenanceRecord.class));
+    }
 }

@@ -128,6 +128,65 @@ public class MaintenanceRecordService {
     }
 
     // ---------------------------------------------------------------------
+    // Lifecycle transitions and deletion
+    // ---------------------------------------------------------------------
+
+    /**
+     * Starts a planned maintenance: the record must be {@code PLANNED} and its
+     * vehicle {@code AVAILABLE}. The record becomes {@code IN_PROGRESS} and the
+     * vehicle {@code MAINTENANCE}; both changes are persisted in one transaction.
+     */
+    @Transactional
+    public MaintenanceRecordResponseDto start(Long id) {
+        MaintenanceRecord record = getRecord(id);
+        requireRecordStatus(record, MaintenanceStatus.PLANNED, "started");
+        Vehicle vehicle = record.getVehicle();
+        requireVehicleStatus(record, vehicle, VehicleStatus.AVAILABLE, "started");
+
+        record.start();
+        vehicle.setStatus(VehicleStatus.MAINTENANCE);
+        maintenanceRecordRepository.save(record);
+        vehicleRepository.save(vehicle);
+        return maintenanceRecordMapper.toResponse(record);
+    }
+
+    /**
+     * Completes an in-progress maintenance: the record must be
+     * {@code IN_PROGRESS} and its vehicle {@code MAINTENANCE}. The record becomes
+     * {@code COMPLETED} and the vehicle {@code AVAILABLE}; both changes are
+     * persisted in one transaction.
+     */
+    @Transactional
+    public MaintenanceRecordResponseDto complete(Long id) {
+        MaintenanceRecord record = getRecord(id);
+        requireRecordStatus(record, MaintenanceStatus.IN_PROGRESS, "completed");
+        Vehicle vehicle = record.getVehicle();
+        requireVehicleStatus(record, vehicle, VehicleStatus.MAINTENANCE, "completed");
+
+        record.complete();
+        vehicle.setStatus(VehicleStatus.AVAILABLE);
+        maintenanceRecordRepository.save(record);
+        vehicleRepository.save(vehicle);
+        return maintenanceRecordMapper.toResponse(record);
+    }
+
+    /**
+     * Deletes a maintenance record only while it is {@code PLANNED}. In-progress
+     * and completed records are kept as history. Deletion never touches the
+     * vehicle.
+     */
+    @Transactional
+    public void delete(Long id) {
+        MaintenanceRecord record = getRecord(id);
+        if (record.getStatus() != MaintenanceStatus.PLANNED) {
+            throw new ResourceConflictException(
+                    "Maintenance record " + id + " is " + record.getStatus()
+                            + " and can only be deleted while PLANNED");
+        }
+        maintenanceRecordRepository.delete(record);
+    }
+
+    // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
 
@@ -197,6 +256,24 @@ public class MaintenanceRecordService {
             throw new ResourceConflictException(
                     "Vehicle " + vehicleId + " has a rental overlapping "
                             + startDate + " to " + endDate);
+        }
+    }
+
+    private void requireRecordStatus(MaintenanceRecord record, MaintenanceStatus required, String action) {
+        if (record.getStatus() != required) {
+            throw new ResourceConflictException(
+                    "Maintenance record " + record.getId() + " can only be " + action
+                            + " from " + required + " but is " + record.getStatus());
+        }
+    }
+
+    private void requireVehicleStatus(MaintenanceRecord record, Vehicle vehicle,
+                                      VehicleStatus required, String action) {
+        if (vehicle.getStatus() != required) {
+            throw new ResourceConflictException(
+                    "Maintenance record " + record.getId() + " cannot be " + action
+                            + " because vehicle " + vehicle.getId() + " is " + vehicle.getStatus()
+                            + " (must be " + required + ")");
         }
     }
 

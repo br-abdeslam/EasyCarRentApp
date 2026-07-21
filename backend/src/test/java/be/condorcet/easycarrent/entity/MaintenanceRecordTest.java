@@ -110,4 +110,62 @@ class MaintenanceRecordTest {
 
         assertThat(record.toString()).doesNotContain("brake");
     }
+
+    // ------------------------------------------------------------------ lifecycle
+
+    private MaintenanceRecord recordFor(Vehicle vehicle) {
+        MaintenanceRecord record = new MaintenanceRecord(vehicle, "Full brake system replacement",
+                LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 3), new BigDecimal("1500.00"));
+        ReflectionTestUtils.setField(record, "id", 5L);
+        return record;
+    }
+
+    private void assertFieldsPreserved(MaintenanceRecord record, Vehicle vehicle) {
+        assertThat(record.getId()).isEqualTo(5L);
+        assertThat(record.getVehicle()).isSameAs(vehicle);
+        assertThat(record.getDescription()).isEqualTo("Full brake system replacement");
+        assertThat(record.getStartDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+        assertThat(record.getEndDate()).isEqualTo(LocalDate.of(2026, 8, 3));
+        assertThat(record.getCost()).isEqualByComparingTo("1500.00");
+    }
+
+    @Test
+    void startChangesPlannedToInProgress() {
+        MaintenanceRecord record = sampleRecord();
+
+        record.start();
+
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void completeChangesInProgressToCompleted() {
+        MaintenanceRecord record = sampleRecord();
+        record.start();
+
+        record.complete();
+
+        assertThat(record.getStatus()).isEqualTo(MaintenanceStatus.COMPLETED);
+    }
+
+    @Test
+    void startPreservesEveryOtherField() {
+        Vehicle vehicle = sampleVehicle();
+        MaintenanceRecord record = recordFor(vehicle);
+
+        record.start();
+
+        assertFieldsPreserved(record, vehicle);
+    }
+
+    @Test
+    void completePreservesEveryOtherField() {
+        Vehicle vehicle = sampleVehicle();
+        MaintenanceRecord record = recordFor(vehicle);
+
+        record.start();
+        record.complete();
+
+        assertFieldsPreserved(record, vehicle);
+    }
 }

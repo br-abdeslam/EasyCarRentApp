@@ -20,7 +20,9 @@ import org.springframework.security.web.SecurityFilterChain;
  * require ADMIN. Rental booking, updates and lifecycle transitions are allowed
  * for USER or ADMIN, while deleting a rental requires ADMIN. Payment creation and
  * the normal lifecycle (pay/fail/retry) are allowed for USER or ADMIN, while
- * refunding and deleting a payment require ADMIN. {@code /api/ping} stays public.
+ * refunding and deleting a payment require ADMIN. Maintenance records may be read
+ * by USER or ADMIN, while creating, starting, completing and deleting a
+ * maintenance record require ADMIN. {@code /api/ping} stays public.
  */
 @Configuration
 public class SecurityConfig {
@@ -49,6 +51,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/payments/*/refund").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/payments/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/payments/**").hasRole("ADMIN")
+                        // Maintenance records: any authenticated user may read; creating,
+                        // starting, completing and deleting a maintenance record all require
+                        // ADMIN. Maintenance management is an administrative operation.
+                        .requestMatchers(HttpMethod.GET, "/api/maintenance-records/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/maintenance-records/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/maintenance-records/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/maintenance-records/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/vehicles/**", "/api/customers/**")
                         .hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/categories/**", "/api/vehicles/**", "/api/customers/**")

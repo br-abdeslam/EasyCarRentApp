@@ -569,4 +569,78 @@ class MaintenanceRecordControllerTest {
         mockMvc.perform(delete("/api/maintenance-records/100"))
                 .andExpect(status().isUnauthorized());
     }
+
+    // -------------------------------------------------------------- Authorization (USER vs ADMIN)
+    // Reads are open to USER and ADMIN; create, start, complete and delete are
+    // ADMIN-only. The ADMIN success paths and the unauthenticated 401s are already
+    // covered by the tests above.
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void listAsUserReturnsOk() throws Exception {
+        when(maintenanceRecordService.findAll()).thenReturn(List.of(planned()));
+
+        mockMvc.perform(get("/api/maintenance-records")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getByIdAsUserReturnsOk() throws Exception {
+        when(maintenanceRecordService.findById(100L)).thenReturn(planned());
+
+        mockMvc.perform(get("/api/maintenance-records/100")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getByVehicleAsUserReturnsOk() throws Exception {
+        when(maintenanceRecordService.findByVehicleId(7L)).thenReturn(List.of(planned()));
+
+        mockMvc.perform(get("/api/maintenance-records/vehicle/7")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getByStatusAsUserReturnsOk() throws Exception {
+        when(maintenanceRecordService.findByStatus(MaintenanceStatus.PLANNED)).thenReturn(List.of(planned()));
+
+        mockMvc.perform(get("/api/maintenance-records/status/PLANNED")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void createAsUserReturnsForbiddenAndDoesNotCallService() throws Exception {
+        mockMvc.perform(post("/api/maintenance-records")
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
+                .andExpect(status().isForbidden());
+
+        verify(maintenanceRecordService, never()).create(any());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void startAsUserReturnsForbiddenAndDoesNotCallService() throws Exception {
+        mockMvc.perform(patch("/api/maintenance-records/100/start"))
+                .andExpect(status().isForbidden());
+
+        verify(maintenanceRecordService, never()).start(anyLong());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void completeAsUserReturnsForbiddenAndDoesNotCallService() throws Exception {
+        mockMvc.perform(patch("/api/maintenance-records/100/complete"))
+                .andExpect(status().isForbidden());
+
+        verify(maintenanceRecordService, never()).complete(anyLong());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void deleteAsUserReturnsForbiddenAndDoesNotCallService() throws Exception {
+        mockMvc.perform(delete("/api/maintenance-records/100"))
+                .andExpect(status().isForbidden());
+
+        verify(maintenanceRecordService, never()).delete(anyLong());
+    }
 }

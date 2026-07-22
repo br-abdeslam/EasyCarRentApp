@@ -7,6 +7,7 @@ import be.condorcet.easycarrent.entity.MaintenanceStatus;
 import be.condorcet.easycarrent.entity.RentalStatus;
 import be.condorcet.easycarrent.entity.Vehicle;
 import be.condorcet.easycarrent.entity.VehicleStatus;
+import be.condorcet.easycarrent.exception.InvalidRequestException;
 import be.condorcet.easycarrent.exception.ResourceConflictException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.MaintenanceRecordMapper;
@@ -214,8 +215,8 @@ public class MaintenanceRecordService {
     /** Requires {@code startDate <= endDate}; same-day maintenance is allowed. */
     private void validatePeriod(LocalDate startDate, LocalDate endDate) {
         if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException(
-                    "endDate " + endDate + " must not be before startDate " + startDate);
+            throw new InvalidRequestException(
+                    "Maintenance end date must be on or after start date");
         }
     }
 

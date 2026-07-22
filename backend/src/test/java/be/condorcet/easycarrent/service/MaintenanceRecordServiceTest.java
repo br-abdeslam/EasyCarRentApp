@@ -18,6 +18,7 @@ import be.condorcet.easycarrent.entity.MaintenanceStatus;
 import be.condorcet.easycarrent.entity.RentalStatus;
 import be.condorcet.easycarrent.entity.Vehicle;
 import be.condorcet.easycarrent.entity.VehicleStatus;
+import be.condorcet.easycarrent.exception.InvalidRequestException;
 import be.condorcet.easycarrent.exception.ResourceConflictException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.MaintenanceRecordMapper;
@@ -363,10 +364,18 @@ class MaintenanceRecordServiceTest {
     }
 
     @Test
-    void createRejectsEndDateBeforeStartDate() {
+    void createRejectsEndDateBeforeStartDateAsInvalidRequest() {
         assertThatThrownBy(() -> service.create(
                 request(7L, "Work", LocalDate.of(2026, 6, 20), LocalDate.of(2026, 6, 10), "10.00")))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("end date").hasMessageContaining("start date");
+
+        // The date-order check runs before any resolution, overlap or persistence.
+        verify(vehicleRepository, never()).findById(anyLong());
+        verify(maintenanceRecordRepository, never())
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        anyLong(), anyCollection(), any(), any());
+        verify(rentalRepository, never()).countOverlappingRentals(anyLong(), any(), any(), anyCollection());
         verifyNeverSaved();
     }
 

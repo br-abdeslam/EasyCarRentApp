@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import be.condorcet.easycarrent.config.SecurityConfig;
 import be.condorcet.easycarrent.dto.MaintenanceRecordResponseDto;
 import be.condorcet.easycarrent.entity.MaintenanceStatus;
+import be.condorcet.easycarrent.exception.InvalidRequestException;
 import be.condorcet.easycarrent.exception.ResourceConflictException;
 import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.service.MaintenanceRecordService;
@@ -349,18 +350,19 @@ class MaintenanceRecordControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void createEndBeforeStartMapsToCurrentIllegalArgumentBehavior() throws Exception {
-        // The service rejects endDate < startDate with IllegalArgumentException, which
-        // the current GlobalExceptionHandler maps to a safe 500 (no dedicated handler).
-        // This documents the existing behavior; it is unchanged in this step.
+    void createEndBeforeStartReturnsBadRequest() throws Exception {
+        // endDate < startDate is a service-level cross-field error (InvalidRequestException)
+        // mapped by the GlobalExceptionHandler to 400. The controller does not compute it.
         when(maintenanceRecordService.create(any()))
-                .thenThrow(new IllegalArgumentException("endDate 2026-06-01 must not be before startDate 2026-06-10"));
+                .thenThrow(new InvalidRequestException("Maintenance end date must be on or after start date"));
 
         mockMvc.perform(post("/api/maintenance-records")
                         .contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.error").value("Internal Server Error"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Maintenance end date must be on or after start date"))
+                .andExpect(jsonPath("$.path").value("/api/maintenance-records"));
     }
 
     @Test

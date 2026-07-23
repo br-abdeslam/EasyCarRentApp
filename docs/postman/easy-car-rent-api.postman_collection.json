@@ -32,7 +32,18 @@
     { "key": "failedPaymentId", "value": "" },
     { "key": "paidPaymentId", "value": "" },
     { "key": "refundedPaymentId", "value": "" },
-    { "key": "missingPaymentId", "value": "999999" }
+    { "key": "missingPaymentId", "value": "999999" },
+    { "key": "maintenanceRecordId", "value": "" },
+    { "key": "plannedMaintenanceId", "value": "" },
+    { "key": "inProgressMaintenanceId", "value": "" },
+    { "key": "completedMaintenanceId", "value": "" },
+    { "key": "maintenanceVehicleId", "value": "" },
+    { "key": "inactiveMaintenanceVehicleId", "value": "" },
+    { "key": "maintenanceConflictVehicleId", "value": "" },
+    { "key": "missingMaintenanceRecordId", "value": "999999" },
+    { "key": "missingMaintenanceVehicleId", "value": "999999" },
+    { "key": "maintenanceStartDate", "value": "2026-06-10" },
+    { "key": "maintenanceEndDate", "value": "2026-06-20" }
   ],
   "item": [
     {
@@ -986,6 +997,2487 @@
             "body": { "mode": "raw", "raw": "{\n  \"name\": \"AdminCreated\",\n  \"description\": \"ADMIN role\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
           }
+        }
+      ]
+    },
+    {
+      "name": "Maintenance Records",
+      "item": [
+        {
+          "name": "List Maintenance Records as USER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('response is an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Maintenance Records as ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Maintenance Record by ID as USER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('exposes only maintenance fields', () => pm.expect(body).to.have.all.keys('id','vehicleId','description','startDate','endDate','cost','status'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{maintenanceRecordId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{maintenanceRecordId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Maintenance Records by Vehicle as USER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('response is an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/vehicle/{{maintenanceVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "vehicle",
+                "{{maintenanceVehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get PLANNED Maintenance Records as USER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('all are PLANNED', () => pm.response.json().forEach(r => pm.expect(r.status).to.eql('PLANNED')));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/status/PLANNED",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "status",
+                "PLANNED"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get IN_PROGRESS Maintenance Records as USER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('all are IN_PROGRESS', () => pm.response.json().forEach(r => pm.expect(r.status).to.eql('IN_PROGRESS')));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/status/IN_PROGRESS",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "status",
+                "IN_PROGRESS"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Missing Maintenance Record (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error is Not Found', () => pm.expect(pm.response.json().error).to.eql('Not Found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{missingMaintenanceRecordId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{missingMaintenanceRecordId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Maintenance Records for Missing Vehicle (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error is Not Found', () => pm.expect(pm.response.json().error).to.eql('Not Found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/vehicle/{{missingMaintenanceVehicleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "vehicle",
+                "{{missingMaintenanceVehicleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Maintenance Records with Invalid Status (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('status is 400', () => pm.expect(pm.response.json().status).to.eql(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/status/CANCELLED",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "status",
+                "CANCELLED"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unauthenticated Maintenance Read (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Maintenance Record as ADMIN (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('status is PLANNED', () => pm.expect(body.status).to.eql('PLANNED'));",
+                  "pm.test('vehicleId matches', () => pm.expect(String(body.vehicleId)).to.eql(pm.collectionVariables.get('maintenanceVehicleId')));",
+                  "pm.test('description matches', () => pm.expect(body.description).to.eql('Scheduled fictional maintenance'));",
+                  "pm.test('startDate matches', () => pm.expect(body.startDate).to.eql(pm.collectionVariables.get('maintenanceStartDate')));",
+                  "pm.test('endDate matches', () => pm.expect(body.endDate).to.eql(pm.collectionVariables.get('maintenanceEndDate')));",
+                  "pm.test('cost is present', () => pm.expect(body.cost).to.not.be.undefined);",
+                  "pm.test('Location ends with created id', () => pm.expect(pm.response.headers.get('Location')).to.match(new RegExp('/api/maintenance-records/' + body.id + '$')));",
+                  "pm.test('exposes only maintenance fields', () => pm.expect(body).to.have.all.keys('id','vehicleId','description','startDate','endDate','cost','status'));",
+                  "pm.collectionVariables.set('maintenanceRecordId', body.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Same-Day Maintenance as ADMIN (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('status is PLANNED', () => pm.expect(body.status).to.eql('PLANNED'));",
+                  "pm.test('same-day period', () => pm.expect(body.startDate).to.eql(body.endDate));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceStartDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Maintenance as USER - forbidden (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unauthenticated Maintenance Creation (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create without vehicleId - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('vehicleId validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('vehicleId'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with blank description - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('description validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('description'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"   \",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with description longer than 500 characters - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('description validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('description'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create without startDate - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('startDate validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('startDate'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create without endDate - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('endDate validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('endDate'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create without cost - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('cost validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('cost'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with negative cost - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('cost validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('cost'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": -1.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with excessive cost precision - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('cost validation error', () => pm.expect(pm.response.json().validationErrors).to.have.property('cost'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 10.999\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with invalid date format - validation (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('status is 400', () => pm.expect(pm.response.json().status).to.eql(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"not-a-date\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with endDate before startDate - invalid period (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('error is Bad Request', () => pm.expect(body.error).to.eql('Bad Request'));",
+                  "pm.test('message explains end on or after start', () => pm.expect(body.message.toLowerCase()).to.include('end date').and.to.include('start date'));",
+                  "pm.test('path is maintenance-records', () => pm.expect(body.path).to.eql('/api/maintenance-records'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"2026-06-20\",\n  \"endDate\": \"2026-06-10\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create for Missing Vehicle (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error is Not Found', () => pm.expect(pm.response.json().error).to.eql('Not Found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{missingMaintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create for INACTIVE Vehicle - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{inactiveMaintenanceVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create overlapping PLANNED Maintenance - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create overlapping IN_PROGRESS Maintenance - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create overlapping PLANNED Rental - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create overlapping ACTIVE Rental - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"description\": \"Scheduled fictional maintenance\",\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"cost\": 125.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start PLANNED Maintenance as ADMIN (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('status is IN_PROGRESS', () => pm.expect(body.status).to.eql('IN_PROGRESS'));",
+                  "pm.test('vehicleId present', () => pm.expect(body.vehicleId).to.not.be.undefined);",
+                  "pm.test('description/dates/cost present', () => pm.expect(body).to.include.all.keys('description','startDate','endDate','cost'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}",
+                "start"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start Maintenance as USER - forbidden (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}",
+                "start"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start Missing Maintenance Record (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error is Not Found', () => pm.expect(pm.response.json().error).to.eql('Not Found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{missingMaintenanceRecordId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{missingMaintenanceRecordId}}",
+                "start"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start with Invalid Record Transition - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{inProgressMaintenanceId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{inProgressMaintenanceId}}",
+                "start"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start with Invalid Vehicle Status - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}",
+                "start"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unauthenticated Start (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}",
+                "start"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete IN_PROGRESS Maintenance as ADMIN (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('status is COMPLETED', () => pm.expect(body.status).to.eql('COMPLETED'));",
+                  "pm.test('vehicleId present', () => pm.expect(body.vehicleId).to.not.be.undefined);",
+                  "pm.test('description/dates/cost present', () => pm.expect(body).to.include.all.keys('description','startDate','endDate','cost'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{inProgressMaintenanceId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{inProgressMaintenanceId}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete Maintenance as USER - forbidden (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{inProgressMaintenanceId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{inProgressMaintenanceId}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete Missing Maintenance Record (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error is Not Found', () => pm.expect(pm.response.json().error).to.eql('Not Found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{missingMaintenanceRecordId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{missingMaintenanceRecordId}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete with Invalid Record Transition - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete with Invalid Vehicle Status - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{inProgressMaintenanceId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{inProgressMaintenanceId}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unauthenticated Complete (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{inProgressMaintenanceId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{inProgressMaintenanceId}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete PLANNED Maintenance as ADMIN (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));",
+                  "pm.test('empty body', () => pm.expect(pm.response.text()).to.be.empty);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete IN_PROGRESS Maintenance as ADMIN - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{inProgressMaintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{inProgressMaintenanceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete COMPLETED Maintenance as ADMIN - conflict (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{completedMaintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{completedMaintenanceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Maintenance as USER - forbidden (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{userUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{userPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Missing Maintenance Record (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error is Not Found', () => pm.expect(pm.response.json().error).to.eql('Not Found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{missingMaintenanceRecordId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{missingMaintenanceRecordId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unauthenticated Delete (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/maintenance-records/{{plannedMaintenanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "maintenance-records",
+                "{{plannedMaintenanceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rental Conflict Protection",
+          "item": [
+            {
+              "name": "Create Rental overlapping PLANNED Maintenance - conflict (409)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                      "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "{{adminUsername}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{adminPassword}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"customerId\": {{customerId}}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/rentals",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "rentals"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Rental overlapping IN_PROGRESS Maintenance - conflict (409)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                      "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "{{adminUsername}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{adminPassword}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"customerId\": {{customerId}}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/rentals",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "rentals"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Rental to overlap PLANNED Maintenance - conflict (409)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                      "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "{{adminUsername}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{adminPassword}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"customerId\": {{customerId}}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/rentals/{{rentalId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "rentals",
+                    "{{rentalId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Rental to overlap IN_PROGRESS Maintenance - conflict (409)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                      "pm.test('error is Conflict', () => pm.expect(pm.response.json().error).to.eql('Conflict'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "username",
+                      "value": "{{adminUsername}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{adminPassword}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startDate\": \"{{maintenanceStartDate}}\",\n  \"endDate\": \"{{maintenanceEndDate}}\",\n  \"vehicleId\": {{maintenanceConflictVehicleId}},\n  \"customerId\": {{customerId}}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/rentals/{{rentalId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "rentals",
+                    "{{rentalId}}"
+                  ]
+                }
+              }
+            }
+          ]
         }
       ]
     }

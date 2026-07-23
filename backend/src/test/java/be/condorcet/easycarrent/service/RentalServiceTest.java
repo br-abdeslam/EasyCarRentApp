@@ -3,6 +3,7 @@ package be.condorcet.easycarrent.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -13,6 +14,7 @@ import be.condorcet.easycarrent.dto.RentalRequestDto;
 import be.condorcet.easycarrent.dto.RentalResponseDto;
 import be.condorcet.easycarrent.dto.VehicleResponseDto;
 import be.condorcet.easycarrent.entity.Customer;
+import be.condorcet.easycarrent.entity.MaintenanceStatus;
 import be.condorcet.easycarrent.entity.Rental;
 import be.condorcet.easycarrent.entity.RentalStatus;
 import be.condorcet.easycarrent.entity.Vehicle;
@@ -24,6 +26,7 @@ import be.condorcet.easycarrent.exception.ResourceNotFoundException;
 import be.condorcet.easycarrent.mapper.RentalMapper;
 import be.condorcet.easycarrent.mapper.VehicleMapper;
 import be.condorcet.easycarrent.repository.CustomerRepository;
+import be.condorcet.easycarrent.repository.MaintenanceRecordRepository;
 import be.condorcet.easycarrent.repository.RentalRepository;
 import be.condorcet.easycarrent.repository.VehicleRepository;
 import java.math.BigDecimal;
@@ -54,15 +57,19 @@ class RentalServiceTest {
     private VehicleRepository vehicleRepository;
     @Mock
     private CustomerRepository customerRepository;
+    @Mock
+    private MaintenanceRecordRepository maintenanceRecordRepository;
     @Captor
     private ArgumentCaptor<Collection<RentalStatus>> statusCaptor;
+    @Captor
+    private ArgumentCaptor<Collection<MaintenanceStatus>> maintenanceStatusCaptor;
 
     private RentalService service;
 
     @BeforeEach
     void setUp() {
         service = new RentalService(rentalRepository, vehicleRepository, customerRepository,
-                new RentalMapper(), new VehicleMapper());
+                maintenanceRecordRepository, new RentalMapper(), new VehicleMapper());
     }
 
     // ------------------------------------------------------------------ fixtures
@@ -790,5 +797,135 @@ class RentalServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0)).isInstanceOf(VehicleResponseDto.class);
         assertThat(result.get(0).registrationNumber()).isEqualTo("1-ABC-1");
+    }
+
+    // ==================================================================== Maintenance protection: create
+
+    @Test
+    void createChecksMaintenanceOverlapWithExactVehicleStatusesAndBoundaries() {
+        when(customerRepository.findById(2L)).thenReturn(Optional.of(customer(2L, END.plusYears(1))));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle(1L, VehicleStatus.AVAILABLE)));
+        when(rentalRepository.countOverlappingRentals(eq(1L), any(), any(), any())).thenReturn(0L);
+        when(maintenanceRecordRepository
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        eq(1L), maintenanceStatusCaptor.capture(), eq(END), eq(START)))
+                .thenReturn(false);
+        stubSaveReturnsArgument();
+
+        service.create(request(START, END, 1L, 2L));
+
+        assertThat(maintenanceStatusCaptor.getValue())
+                .containsExactlyInAnyOrder(MaintenanceStatus.PLANNED, MaintenanceStatus.IN_PROGRESS)
+                .doesNotContain(MaintenanceStatus.COMPLETED);
+    }
+
+    @Test
+    void createRejectsWhenMaintenanceOverlaps() {
+        Vehicle vehicle = vehicle(1L, VehicleStatus.AVAILABLE);
+        when(customerRepository.findById(2L)).thenReturn(Optional.of(customer(2L, END.plusYears(1))));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+        when(rentalRepository.countOverlappingRentals(eq(1L), any(), any(), any())).thenReturn(0L);
+        when(maintenanceRecordRepository
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        eq(1L), anyCollection(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(request(START, END, 1L, 2L)))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessageContaining("1").hasMessageContaining("2026-06-20");
+        verify(rentalRepository, never()).save(any());
+        verify(vehicleRepository, never()).save(any());
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
+    }
+
+    @Test
+    void createContinuesWhenNoMaintenanceOverlap() {
+        when(customerRepository.findById(2L)).thenReturn(Optional.of(customer(2L, END.plusYears(1))));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle(1L, VehicleStatus.AVAILABLE)));
+        when(rentalRepository.countOverlappingRentals(eq(1L), any(), any(), any())).thenReturn(0L);
+        when(maintenanceRecordRepository
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        eq(1L), anyCollection(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(false);
+        stubSaveReturnsArgument();
+
+        RentalResponseDto result = service.create(request(START, END, 1L, 2L));
+
+        assertThat(result.status()).isEqualTo(RentalStatus.PLANNED);
+        verify(rentalRepository).save(any(Rental.class));
+    }
+
+    // ==================================================================== Maintenance protection: update
+
+    @Test
+    void updateChecksMaintenanceOverlapWithFinalVehicleAndDates() {
+        LocalDate newStart = START.plusDays(1);
+        LocalDate newEnd = START.plusDays(5);
+        Rental existing = rental(5L, RentalStatus.PLANNED, vehicle(1L, VehicleStatus.AVAILABLE),
+                customer(2L, END.plusYears(1)), START, END);
+        when(rentalRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(customerRepository.findById(2L)).thenReturn(Optional.of(customer(2L, newEnd.plusYears(1))));
+        when(vehicleRepository.findById(3L)).thenReturn(Optional.of(vehicle(3L, VehicleStatus.AVAILABLE)));
+        when(rentalRepository.countOverlappingRentalsExcludingRentalId(eq(3L), eq(5L), any(), any(), any()))
+                .thenReturn(0L);
+        when(maintenanceRecordRepository
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        eq(3L), maintenanceStatusCaptor.capture(), eq(newEnd), eq(newStart)))
+                .thenReturn(false);
+        stubSaveReturnsArgument();
+
+        service.update(5L, request(newStart, newEnd, 3L, 2L));
+
+        assertThat(maintenanceStatusCaptor.getValue())
+                .containsExactlyInAnyOrder(MaintenanceStatus.PLANNED, MaintenanceStatus.IN_PROGRESS)
+                .doesNotContain(MaintenanceStatus.COMPLETED);
+    }
+
+    @Test
+    void updateRejectsWhenMaintenanceOverlapsAndLeavesEverythingUnchanged() {
+        Vehicle vehicle = vehicle(1L, VehicleStatus.AVAILABLE);
+        Rental existing = rental(5L, RentalStatus.PLANNED, vehicle,
+                customer(2L, END.plusYears(1)), START, END);
+        when(rentalRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(customerRepository.findById(2L)).thenReturn(Optional.of(customer(2L, END.plusYears(1))));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+        when(rentalRepository.countOverlappingRentalsExcludingRentalId(eq(1L), eq(5L), any(), any(), any()))
+                .thenReturn(0L);
+        when(maintenanceRecordRepository
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        eq(1L), anyCollection(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> service.update(5L, request(START, END, 1L, 2L)))
+                .isInstanceOf(ResourceConflictException.class);
+        verify(rentalRepository, never()).save(any());
+        verify(vehicleRepository, never()).save(any());
+        assertThat(existing.getStatus()).isEqualTo(RentalStatus.PLANNED);
+        assertThat(existing.getStartDate()).isEqualTo(START);
+        assertThat(existing.getEndDate()).isEqualTo(END);
+        assertThat(existing.getTotalPrice()).isEqualByComparingTo("500.00");
+        assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
+    }
+
+    @Test
+    void updateContinuesWhenNoMaintenanceOverlap() {
+        Rental existing = rental(5L, RentalStatus.PLANNED, vehicle(1L, VehicleStatus.AVAILABLE),
+                customer(2L, END.plusYears(1)), START, END);
+        when(rentalRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(customerRepository.findById(2L)).thenReturn(Optional.of(customer(2L, END.plusYears(2))));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle(1L, VehicleStatus.AVAILABLE)));
+        when(rentalRepository.countOverlappingRentalsExcludingRentalId(eq(1L), eq(5L), any(), any(), any()))
+                .thenReturn(0L);
+        when(maintenanceRecordRepository
+                .existsByVehicle_IdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        eq(1L), anyCollection(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(false);
+        stubSaveReturnsArgument();
+
+        LocalDate newEnd = START.plusDays(4); // 4 billable days -> 200.00
+        RentalResponseDto result = service.update(5L, request(START, newEnd, 1L, 2L));
+
+        assertThat(result.totalPrice()).isEqualByComparingTo("200.00");
+        verify(rentalRepository).save(any(Rental.class));
     }
 }

@@ -18,6 +18,7 @@
 		<maven.compiler.release>25</maven.compiler.release>
 
 		<javafx.version>25.0.1</javafx.version>
+		<jackson.version>2.19.2</jackson.version>
 		<junit.version>5.11.4</junit.version>
 
 		<maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
@@ -37,6 +38,17 @@
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-fxml</artifactId>
 			<version>${javafx.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 
 		<dependency>

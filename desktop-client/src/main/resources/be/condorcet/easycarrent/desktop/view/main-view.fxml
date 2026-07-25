@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+	xmlns:fx="http://javafx.com/fxml"
+	fx:controller="be.condorcet.easycarrent.desktop.view.MainViewController"
+	styleClass="app-root">
+	<center>
+		<VBox alignment="CENTER" spacing="16.0">
+			<padding>
+				<Insets top="32.0" right="32.0" bottom="32.0" left="32.0"/>
+			</padding>
+			<children>
+				<Label text="Easy Car Rent" styleClass="app-title"/>
+				<Label fx:id="statusLabel" styleClass="app-status"/>
+			</children>
+		</VBox>
+	</center>
+</BorderPane>

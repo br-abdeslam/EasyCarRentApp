@@ -28,6 +28,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/section-placeholder.fxml";
 	private static final String VEHICLE_CATEGORIES_FXML =
 			"/be/condorcet/easycarrent/desktop/view/vehicle-categories-view.fxml";
+	private static final String VEHICLES_FXML =
+			"/be/condorcet/easycarrent/desktop/view/vehicles-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -191,6 +193,89 @@ class AppResourcesTest {
 				"section-placeholder.fxml must not use inline style attributes");
 		assertFalse(readResource(VEHICLE_CATEGORIES_FXML).contains("style=\""),
 				"vehicle-categories-view.fxml must not use inline style attributes");
+		assertFalse(readResource(VEHICLES_FXML).contains("style=\""),
+				"vehicles-view.fxml must not use inline style attributes");
+	}
+
+	@Test
+	void vehiclesFxmlExistsAndIsWellFormed() throws Exception {
+		assertNotNull(resource(VEHICLES_FXML),
+				"vehicles-view.fxml must exist on the test classpath");
+		try (InputStream in = stream(VEHICLES_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"vehicles-view.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void vehiclesFxmlDeclaresController() throws Exception {
+		String fxml = readResource(VEHICLES_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.VehicleController\""),
+				"vehicles-view.fxml must declare VehicleController");
+	}
+
+	@Test
+	void vehiclesFxmlContainsTableAndColumns() throws Exception {
+		String fxml = readResource(VEHICLES_FXML);
+		assertTrue(fxml.contains("fx:id=\"vehicleTable\""), "vehicleTable required");
+		for (String column : new String[] {"idColumn", "registrationColumn", "brandColumn",
+				"modelColumn", "yearColumn", "categoryColumn", "statusColumn", "dailyRateColumn"}) {
+			assertTrue(fxml.contains("fx:id=\"" + column + "\""), column + " required");
+		}
+	}
+
+	@Test
+	void vehiclesFxmlContainsActionControls() throws Exception {
+		String fxml = readResource(VEHICLES_FXML);
+		for (String id : new String[] {"refreshButton", "addButton", "editButton", "deleteButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void vehiclesFxmlContainsStateControls() throws Exception {
+		String fxml = readResource(VEHICLES_FXML);
+		for (String id : new String[] {"loadingIndicator", "statusMessageLabel", "emptyStateLabel",
+				"readOnlyNoticeLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void vehiclesFxmlContainsFormControls() throws Exception {
+		String fxml = readResource(VEHICLES_FXML);
+		for (String id : new String[] {"registrationField", "brandField", "modelField",
+				"manufacturingYearField", "colorField", "dailyRateField", "mileageField",
+				"categoryComboBox", "saveButton", "cancelButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void vehiclesFxmlUsesComboBoxForCategory() throws Exception {
+		String fxml = readResource(VEHICLES_FXML);
+		assertTrue(fxml.contains("<ComboBox"), "the category selector must be a ComboBox");
+	}
+
+	@Test
+	void vehiclesFxmlHasNoStaticTableData() throws Exception {
+		assertFalse(readResource(VEHICLES_FXML).contains("<items>"),
+				"the vehicle table must not define hardcoded rows");
+	}
+
+	@Test
+	void appStylesheetContainsVehicleClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		for (String cssClass : new String[] {
+				".vehicle-view", ".vehicle-header", ".vehicle-toolbar", ".vehicle-table",
+				".vehicle-empty-state", ".vehicle-loading", ".vehicle-status",
+				".vehicle-status-success", ".vehicle-status-error", ".vehicle-editor",
+				".vehicle-editor-title", ".vehicle-category-field"}) {
+			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
+		}
 	}
 
 	@Test

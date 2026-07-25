@@ -10,13 +10,13 @@ module is a standalone Maven project, independent from the backend.
 ## Current scope
 
 The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
-JSON foundation, a login workflow, the authenticated application shell, and the
-first backend-connected domain screen (**Vehicle Categories**). It starts on a
-login screen, authenticates against the backend using HTTP Basic, keeps the
-session in memory, and then shows the main shell: a persistent header (username,
-role, logout), a sidebar to navigate between sections, and a routed central
-content area. **Vehicle Categories** is a real screen backed by the API; the
-other six sections remain routed **placeholder** views.
+JSON foundation, a login workflow, the authenticated application shell, and two
+backend-connected domain screens (**Vehicle Categories** and **Vehicles**). It
+starts on a login screen, authenticates against the backend using HTTP Basic,
+keeps the session in memory, and then shows the main shell: a persistent header
+(username, role, logout), a sidebar to navigate between sections, and a routed
+central content area. **Vehicle Categories** and **Vehicles** are real screens
+backed by the API; the other five sections remain routed **placeholder** views.
 
 ## Main application shell
 
@@ -30,9 +30,43 @@ other six sections remain routed **placeholder** views.
   write permissions are enforced by the backend and future screens).
 - **Routing** — clicking a section replaces only the central content; the header
   and sidebar stay in place and no new window is opened. **Dashboard** is selected
-  by default, and exactly one section stays selected. **Vehicle Categories** loads
-  its real view; the remaining sections load placeholders that state they are
-  prepared for future functionality.
+  by default, and exactly one section stays selected. **Vehicle Categories** and
+  **Vehicles** load their real views; the remaining sections load placeholders
+  that state they are prepared for future functionality.
+
+## Vehicles
+
+The Vehicles screen is connected to the backend `/api/vehicles` API and opens
+inside the central content area (header and sidebar stay visible).
+
+- **Loading, empty, and error states** — vehicles load asynchronously (the JavaFX
+  Application Thread is never blocked); the table shows the real backend data (id,
+  registration, brand, model, year, category, status, daily price). An empty list
+  and API/connection failures are shown with a safe message and no stack traces.
+- **Refresh** — reloads the current backend state; only one load runs at a time.
+- **Status is read-only** — the vehicle status (`AVAILABLE`, `RENTED`,
+  `MAINTENANCE`, `INACTIVE`) is managed by the backend and shown in the table; it
+  is not part of the create/update request and is not edited by the client.
+- **Categories for the editor** — the editor loads categories from
+  `/api/categories` and selects one in a combo box that displays category names
+  while sending the category **id**. Editing matches the vehicle's category by id;
+  if no categories are available, creating and editing are disabled with a clear
+  note.
+- **Role-aware writes** — reading is available to USER and ADMIN. Per the backend
+  security rules, **only ADMIN may create, update, or delete** a vehicle. A USER
+  sees a read-only screen (a read-only notice is shown and the write controls are
+  hidden); the backend remains authoritative.
+- **Create / edit** — an in-view form validates input against the backend
+  constraints before sending (registration required, ≤ 20 chars; brand and model
+  required, ≤ 60; optional year between 1900 and the current year; optional color
+  ≤ 40; positive daily price with at most two decimals; optional non-negative
+  mileage; a category is required). Backend validation messages are displayed
+  safely, and a duplicate registration is reported as a conflict.
+- **Delete** — requires confirmation. Deleting a vehicle that rentals still
+  reference is rejected by the backend and reported safely; the vehicle is kept.
+
+Monetary values use `BigDecimal` end to end; the daily price is shown with two
+decimals. No fake vehicle data is displayed.
 
 ## Vehicle Categories
 
@@ -131,23 +165,25 @@ desktop-client/
     │   │   └── be/condorcet/easycarrent/desktop/
     │   │       ├── App.java
     │   │       ├── auth/{BasicCredentials, DesktopUserRole, AuthenticatedUser,
-    │   │       │        VehicleCategoryPermissions}.java
+    │   │       │        VehicleCategoryPermissions, VehiclePermissions}.java
     │   │       ├── config/ApiConfiguration.java
-    │   │       ├── dto/{ApiErrorDto, VehicleCategoryResponseDto, VehicleCategoryRequestDto}.java
+    │   │       ├── dto/{ApiErrorDto, VehicleCategoryResponseDto, VehicleCategoryRequestDto,
+    │   │       │       VehicleResponseDto, VehicleRequestDto, VehicleStatus}.java
     │   │       ├── http/{ApiClient, JsonMapperFactory}.java
     │   │       ├── http/{ApiRequestException, ApiConnectionException}.java
     │   │       ├── navigation/{MainSection, NavigationState, MainContentRouter}.java
     │   │       ├── service/{BackendHealthService, BackendHealthResult}.java
     │   │       ├── service/{AuthenticationService, AuthenticationResult}.java
     │   │       ├── service/{VehicleCategoryService, VehicleCategoryValidator}.java
+    │   │       ├── service/{VehicleService, VehicleValidator}.java
     │   │       ├── session/{SessionManager, UserSession}.java
     │   │       └── view/{ViewManager, LoginController, MainViewController,
     │   │       │         SectionPlaceholderController, VehicleCategoryController,
-    │   │       │         VehicleCategoryViewState}.java
+    │   │       │         VehicleCategoryViewState, VehicleController, VehicleViewState}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
     │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml,
-    │                 vehicle-categories-view.fxml, app.css}
+    │                 vehicle-categories-view.fxml, vehicles-view.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
@@ -159,8 +195,9 @@ desktop-client/
 - **ViewManager** — authentication-level router that swaps between the login and
   main views only.
 - **MainContentRouter** — routes the central content of the main shell between
-  sections (loading `vehicle-categories-view.fxml` for Vehicle Categories and the
-  placeholder otherwise); it owns no Stage and performs no authentication or HTTP.
+  sections (loading `vehicle-categories-view.fxml` for Vehicle Categories,
+  `vehicles-view.fxml` for Vehicles, and the placeholder otherwise); it owns no
+  Stage and performs no authentication or HTTP.
 - **MainSection / NavigationState** — the available sections and the current
   selection (pure, JavaFX-free).
 - **MainViewController** — main-shell UI events and state.
@@ -177,6 +214,16 @@ desktop-client/
 - **VehicleCategoryPermissions** — the role-based read/write rules for categories.
 - **VehicleCategoryResponseDto / VehicleCategoryRequestDto** — category API
   contracts.
+- **VehicleService** — the vehicle API workflow over `/api/vehicles`.
+- **VehicleController / vehicles-view.fxml** — the vehicle screen's UI events and
+  structure (reusing `VehicleCategoryService` to populate the category selector).
+- **VehicleViewState** — pure, JavaFX-free presentation state for the vehicle
+  screen (loading, selection, editor mode, permissions, category availability).
+- **VehicleValidator** — client-side vehicle validation mirroring the backend
+  constraints (the current year is injected so tests stay deterministic).
+- **VehiclePermissions** — the role-based read/write rules for vehicles.
+- **VehicleResponseDto / VehicleRequestDto / VehicleStatus** — vehicle API
+  contracts; the status is backend-managed and read-only in the client.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
 - **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth GET,
   and authenticated JSON list/POST/PUT/DELETE).

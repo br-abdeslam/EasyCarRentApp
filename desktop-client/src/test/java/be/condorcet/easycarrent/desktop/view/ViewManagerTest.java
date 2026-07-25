@@ -81,6 +81,7 @@ class ViewManagerTest {
 	private static boolean isDomainOrPlaceholderResource(Object value) {
 		String name = fileName(value);
 		return "section-placeholder.fxml".equals(name)
-				|| "vehicle-categories-view.fxml".equals(name);
+				|| "vehicle-categories-view.fxml".equals(name)
+				|| "vehicles-view.fxml".equals(name);
 	}
 }

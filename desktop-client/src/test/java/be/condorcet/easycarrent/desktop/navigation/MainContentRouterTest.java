@@ -26,15 +26,23 @@ class MainContentRouterTest {
 	}
 
 	@Test
-	void vehicleCategoriesSectionMapsToItsOwnView() {
-		assertEquals(MainContentRouter.VEHICLE_CATEGORIES_FXML,
-				MainContentRouter.resourceFor(MainSection.VEHICLE_CATEGORIES));
+	void vehiclesResourcePathIsCorrect() {
+		assertNotNull(MainContentRouter.class.getResource(MainContentRouter.VEHICLES_FXML),
+				"vehicles-view.fxml must be on the classpath at the router's path");
 	}
 
 	@Test
-	void allOtherSectionsMapToThePlaceholder() {
+	void implementedSectionsMapToTheirOwnView() {
+		assertEquals(MainContentRouter.VEHICLE_CATEGORIES_FXML,
+				MainContentRouter.resourceFor(MainSection.VEHICLE_CATEGORIES));
+		assertEquals(MainContentRouter.VEHICLES_FXML,
+				MainContentRouter.resourceFor(MainSection.VEHICLES));
+	}
+
+	@Test
+	void unfinishedSectionsMapToThePlaceholder() {
 		for (MainSection section : MainSection.values()) {
-			if (section == MainSection.VEHICLE_CATEGORIES) {
+			if (section == MainSection.VEHICLE_CATEGORIES || section == MainSection.VEHICLES) {
 				continue;
 			}
 			assertEquals(MainContentRouter.PLACEHOLDER_FXML,

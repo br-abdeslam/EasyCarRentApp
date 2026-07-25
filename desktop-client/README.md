@@ -10,11 +10,29 @@ module is a standalone Maven project, independent from the backend.
 ## Current scope
 
 The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
-JSON foundation, and a login workflow. It starts on a login screen, authenticates
-against the backend using HTTP Basic, keeps the session in memory, and then shows
-the main view with the authenticated username and role and a logout action. It
-does **not** yet include the full application navigation or any domain screens
-(vehicles, customers, rentals, payments, maintenance).
+JSON foundation, a login workflow, and the authenticated application shell. It
+starts on a login screen, authenticates against the backend using HTTP Basic,
+keeps the session in memory, and then shows the main shell: a persistent header
+(username, role, logout), a sidebar to navigate between sections, and a routed
+central content area. The seven sections currently show routed **placeholder**
+views only — there is **no domain data or CRUD yet**.
+
+## Main application shell
+
+- **Persistent header** — application title, the authenticated username and role,
+  and a **Log out** button; all remain visible while navigating.
+- **Backend-health state** — a status area continues to show
+  **Backend connected** / **Backend unavailable**.
+- **Sidebar navigation** — seven sections: **Dashboard**, **Vehicle Categories**,
+  **Vehicles**, **Customers**, **Rentals**, **Payments**, **Maintenance**. Both
+  USER and ADMIN see the same sections (visible navigation is not authorization;
+  write permissions are enforced by the backend and future screens).
+- **Routing** — clicking a section replaces only the central content with that
+  section's placeholder (title + short description); the header and sidebar stay
+  in place and no new window is opened. **Dashboard** is selected by default, and
+  exactly one section stays selected.
+- **Placeholders only** — routed views contain no backend data, tables, forms, or
+  actions; they state that the section is prepared for future functionality.
 
 ## Login and authentication
 
@@ -92,13 +110,15 @@ desktop-client/
     │   │       ├── dto/ApiErrorDto.java
     │   │       ├── http/{ApiClient, JsonMapperFactory}.java
     │   │       ├── http/{ApiRequestException, ApiConnectionException}.java
+    │   │       ├── navigation/{MainSection, NavigationState, MainContentRouter}.java
     │   │       ├── service/{BackendHealthService, BackendHealthResult}.java
     │   │       ├── service/{AuthenticationService, AuthenticationResult}.java
     │   │       ├── session/{SessionManager, UserSession}.java
-    │   │       └── view/{ViewManager, LoginController, MainViewController}.java
+    │   │       └── view/{ViewManager, LoginController, MainViewController,
+    │   │       │         SectionPlaceholderController}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
-    │       └── view/{login-view.fxml, main-view.fxml, app.css}
+    │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
@@ -107,8 +127,16 @@ desktop-client/
 
 - **App.java** — application bootstrap: assembles the shared services and shows
   the login view through the `ViewManager`. No view logic.
-- **ViewManager** — minimal router that swaps between the login and main views.
-- **LoginController / MainViewController** — UI events and state only.
+- **ViewManager** — authentication-level router that swaps between the login and
+  main views only.
+- **MainContentRouter** — routes the central content of the main shell between
+  sections; it owns no Stage and performs no authentication or HTTP.
+- **MainSection / NavigationState** — the available sections and the current
+  selection (pure, JavaFX-free).
+- **MainViewController** — main-shell UI events and state.
+- **LoginController** — login UI events and state.
+- **SectionPlaceholderController / section-placeholder.fxml** — the reusable
+  temporary section content.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
 - **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth).
 - **JsonMapperFactory** — shared JSON mapper configuration.
@@ -153,9 +181,6 @@ established repository instructions:
    ./mvnw spring-boot:run
    ```
 
-The API listens on `http://localhost:8080`, and `/api/ping` is publicly
-accessible.
-
 The API listens on `http://localhost:8080`. `/api/ping` is public; `GET
 /api/vehicles` (used to validate login) requires an authenticated USER or ADMIN.
 
@@ -166,11 +191,14 @@ A resizable window titled **Easy Car Rent**:
 - **Login** — username and password fields with a **Sign in** button. Invalid
   credentials or an unavailable backend keep the user on this screen with a safe
   message; the password field is cleared after each attempt.
-- **Main** — after a successful login, shows the heading **Easy Car Rent**, the
-  message **Desktop client initialized successfully**, a backend connectivity
-  indicator (**Backend connected** / **Backend unavailable**), and a session bar
-  with the authenticated username, the role (**USER** or **ADMIN**), and a
-  **Log out** button that returns to the login screen.
+- **Main shell** — after a successful login: a header with the application title,
+  the authenticated username and role (**USER** or **ADMIN**), and a **Log out**
+  button; a sidebar listing the seven sections; a central content area showing the
+  selected section's placeholder (**Dashboard** by default); and a status area
+  with the initialization message and the backend connectivity indicator
+  (**Backend connected** / **Backend unavailable**). Clicking a section changes
+  only the central content. **Log out** returns to the login screen.
 
-The window can be resized and closes normally. Complete navigation and domain
-screens are not yet implemented.
+The window can be resized (the sidebar keeps a stable width and the content area
+grows) and closes normally. Domain data, tables, and CRUD are not yet
+implemented.

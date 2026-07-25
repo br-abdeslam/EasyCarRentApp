@@ -24,6 +24,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/main-view.fxml";
 	private static final String LOGIN_VIEW_FXML =
 			"/be/condorcet/easycarrent/desktop/view/login-view.fxml";
+	private static final String SECTION_PLACEHOLDER_FXML =
+			"/be/condorcet/easycarrent/desktop/view/section-placeholder.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -183,6 +185,102 @@ class AppResourcesTest {
 				"login-view.fxml must not use inline style attributes");
 		assertFalse(readResource(MAIN_VIEW_FXML).contains("style=\""),
 				"main-view.fxml must not use inline style attributes");
+		assertFalse(readResource(SECTION_PLACEHOLDER_FXML).contains("style=\""),
+				"section-placeholder.fxml must not use inline style attributes");
+	}
+
+	@Test
+	void sectionPlaceholderFxmlExistsOnClasspath() {
+		assertNotNull(resource(SECTION_PLACEHOLDER_FXML),
+				"section-placeholder.fxml must exist on the test classpath");
+	}
+
+	@Test
+	void sectionPlaceholderFxmlIsWellFormedXml() throws Exception {
+		try (InputStream in = stream(SECTION_PLACEHOLDER_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"section-placeholder.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void sectionPlaceholderDeclaresController() throws Exception {
+		String fxml = readResource(SECTION_PLACEHOLDER_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.SectionPlaceholderController\""),
+				"section-placeholder.fxml must declare SectionPlaceholderController");
+	}
+
+	@Test
+	void sectionPlaceholderContainsLabelIds() throws Exception {
+		String fxml = readResource(SECTION_PLACEHOLDER_FXML);
+		assertTrue(fxml.contains("fx:id=\"sectionTitleLabel\""), "sectionTitleLabel required");
+		assertTrue(fxml.contains("fx:id=\"sectionDescriptionLabel\""),
+				"sectionDescriptionLabel required");
+	}
+
+	@Test
+	void mainViewContainsContentHost() throws Exception {
+		String fxml = readResource(MAIN_VIEW_FXML);
+		assertTrue(fxml.contains("fx:id=\"contentHost\""),
+				"main-view.fxml must contain the contentHost");
+	}
+
+	@Test
+	void mainViewContainsAllNavigationButtons() throws Exception {
+		String fxml = readResource(MAIN_VIEW_FXML);
+		assertTrue(fxml.contains("fx:id=\"dashboardNavigationButton\""), "dashboard button required");
+		assertTrue(fxml.contains("fx:id=\"vehicleCategoriesNavigationButton\""),
+				"vehicle categories button required");
+		assertTrue(fxml.contains("fx:id=\"vehiclesNavigationButton\""), "vehicles button required");
+		assertTrue(fxml.contains("fx:id=\"customersNavigationButton\""), "customers button required");
+		assertTrue(fxml.contains("fx:id=\"rentalsNavigationButton\""), "rentals button required");
+		assertTrue(fxml.contains("fx:id=\"paymentsNavigationButton\""), "payments button required");
+		assertTrue(fxml.contains("fx:id=\"maintenanceNavigationButton\""),
+				"maintenance button required");
+	}
+
+	@Test
+	void mainViewContainsToggleGroup() throws Exception {
+		String fxml = readResource(MAIN_VIEW_FXML);
+		assertTrue(fxml.contains("<ToggleGroup"),
+				"main-view.fxml must define a ToggleGroup for navigation");
+		assertTrue(fxml.contains("fx:id=\"navigationToggleGroup\""),
+				"the navigation ToggleGroup must have an fx:id");
+	}
+
+	@Test
+	void mainViewDashboardIsInitiallySelected() throws Exception {
+		String dashboardLine =
+				lineContaining(MAIN_VIEW_FXML, "fx:id=\"dashboardNavigationButton\"");
+		assertTrue(dashboardLine.contains("selected=\"true\""),
+				"the Dashboard navigation button must be selected by default");
+	}
+
+	@Test
+	void mainViewRetainsBackendStatusLabel() throws Exception {
+		assertTrue(readResource(MAIN_VIEW_FXML).contains("fx:id=\"backendStatusLabel\""),
+				"backendStatusLabel must remain present in the shell");
+	}
+
+	@Test
+	void appStylesheetContainsNavigationClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		assertTrue(css.contains(".main-shell"), "app.css must define .main-shell");
+		assertTrue(css.contains(".app-header"), "app.css must define .app-header");
+		assertTrue(css.contains(".navigation-sidebar"), "app.css must define .navigation-sidebar");
+		assertTrue(css.contains(".navigation-button"), "app.css must define .navigation-button");
+		assertTrue(css.contains(".navigation-button:selected"),
+				"app.css must define the selected navigation state");
+		assertTrue(css.contains(".content-host"), "app.css must define .content-host");
+		assertTrue(css.contains(".section-placeholder"), "app.css must define .section-placeholder");
+		assertTrue(css.contains(".section-placeholder-title"),
+				"app.css must define .section-placeholder-title");
+		assertTrue(css.contains(".section-placeholder-description"),
+				"app.css must define .section-placeholder-description");
+		assertTrue(css.contains(".app-status-bar"), "app.css must define .app-status-bar");
 	}
 
 	private static String lineContaining(String path, String token) throws Exception {

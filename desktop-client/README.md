@@ -10,12 +10,13 @@ module is a standalone Maven project, independent from the backend.
 ## Current scope
 
 The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
-JSON foundation, a login workflow, and the authenticated application shell. It
-starts on a login screen, authenticates against the backend using HTTP Basic,
-keeps the session in memory, and then shows the main shell: a persistent header
-(username, role, logout), a sidebar to navigate between sections, and a routed
-central content area. The seven sections currently show routed **placeholder**
-views only — there is **no domain data or CRUD yet**.
+JSON foundation, a login workflow, the authenticated application shell, and the
+first backend-connected domain screen (**Vehicle Categories**). It starts on a
+login screen, authenticates against the backend using HTTP Basic, keeps the
+session in memory, and then shows the main shell: a persistent header (username,
+role, logout), a sidebar to navigate between sections, and a routed central
+content area. **Vehicle Categories** is a real screen backed by the API; the
+other six sections remain routed **placeholder** views.
 
 ## Main application shell
 
@@ -27,12 +28,36 @@ views only — there is **no domain data or CRUD yet**.
   **Vehicles**, **Customers**, **Rentals**, **Payments**, **Maintenance**. Both
   USER and ADMIN see the same sections (visible navigation is not authorization;
   write permissions are enforced by the backend and future screens).
-- **Routing** — clicking a section replaces only the central content with that
-  section's placeholder (title + short description); the header and sidebar stay
-  in place and no new window is opened. **Dashboard** is selected by default, and
-  exactly one section stays selected.
-- **Placeholders only** — routed views contain no backend data, tables, forms, or
-  actions; they state that the section is prepared for future functionality.
+- **Routing** — clicking a section replaces only the central content; the header
+  and sidebar stay in place and no new window is opened. **Dashboard** is selected
+  by default, and exactly one section stays selected. **Vehicle Categories** loads
+  its real view; the remaining sections load placeholders that state they are
+  prepared for future functionality.
+
+## Vehicle Categories
+
+The Vehicle Categories screen is connected to the backend `/api/categories` API
+and opens inside the central content area (header and sidebar stay visible).
+
+- **Loading** — categories are loaded asynchronously; the JavaFX Application
+  Thread is never blocked. A loading indicator is shown while a request runs.
+- **List, empty, and error states** — the table shows the actual backend
+  categories (id, name, description); an empty result and API/connection failures
+  are shown with a safe message and no stack traces.
+- **Refresh** — reloads the current backend state; only one load runs at a time.
+- **Role-aware writes** — reading is available to USER and ADMIN. Per the backend
+  security rules, **only ADMIN may create, update, or delete** a category. A USER
+  sees a read-only screen (a read-only notice is shown and the write controls are
+  hidden); the backend remains authoritative.
+- **Create / edit** — an in-view form validates input against the backend
+  constraints (name required, at most 100 characters; description optional, at
+  most 500) before sending, and displays the backend's validation messages when a
+  request is rejected. Duplicate names are reported as a conflict.
+- **Delete** — requires confirmation. Deleting a category that vehicles still
+  reference is rejected by the backend and reported safely; the category is kept.
+
+No fake category data is displayed, and no other domain screen is implemented in
+this milestone.
 
 ## Login and authentication
 
@@ -105,20 +130,24 @@ desktop-client/
     │   │   ├── module-info.java
     │   │   └── be/condorcet/easycarrent/desktop/
     │   │       ├── App.java
-    │   │       ├── auth/{BasicCredentials, DesktopUserRole, AuthenticatedUser}.java
+    │   │       ├── auth/{BasicCredentials, DesktopUserRole, AuthenticatedUser,
+    │   │       │        VehicleCategoryPermissions}.java
     │   │       ├── config/ApiConfiguration.java
-    │   │       ├── dto/ApiErrorDto.java
+    │   │       ├── dto/{ApiErrorDto, VehicleCategoryResponseDto, VehicleCategoryRequestDto}.java
     │   │       ├── http/{ApiClient, JsonMapperFactory}.java
     │   │       ├── http/{ApiRequestException, ApiConnectionException}.java
     │   │       ├── navigation/{MainSection, NavigationState, MainContentRouter}.java
     │   │       ├── service/{BackendHealthService, BackendHealthResult}.java
     │   │       ├── service/{AuthenticationService, AuthenticationResult}.java
+    │   │       ├── service/{VehicleCategoryService, VehicleCategoryValidator}.java
     │   │       ├── session/{SessionManager, UserSession}.java
     │   │       └── view/{ViewManager, LoginController, MainViewController,
-    │   │       │         SectionPlaceholderController}.java
+    │   │       │         SectionPlaceholderController, VehicleCategoryController,
+    │   │       │         VehicleCategoryViewState}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
-    │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml, app.css}
+    │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml,
+    │                 vehicle-categories-view.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
@@ -130,15 +159,27 @@ desktop-client/
 - **ViewManager** — authentication-level router that swaps between the login and
   main views only.
 - **MainContentRouter** — routes the central content of the main shell between
-  sections; it owns no Stage and performs no authentication or HTTP.
+  sections (loading `vehicle-categories-view.fxml` for Vehicle Categories and the
+  placeholder otherwise); it owns no Stage and performs no authentication or HTTP.
 - **MainSection / NavigationState** — the available sections and the current
   selection (pure, JavaFX-free).
 - **MainViewController** — main-shell UI events and state.
 - **LoginController** — login UI events and state.
 - **SectionPlaceholderController / section-placeholder.fxml** — the reusable
   temporary section content.
+- **VehicleCategoryService** — the category API workflow over `/api/categories`.
+- **VehicleCategoryController / vehicle-categories-view.fxml** — the category
+  screen's UI events and structure.
+- **VehicleCategoryViewState** — pure, JavaFX-free presentation state for the
+  category screen (loading, selection, editor mode, permissions).
+- **VehicleCategoryValidator** — client-side category validation mirroring the
+  backend constraints.
+- **VehicleCategoryPermissions** — the role-based read/write rules for categories.
+- **VehicleCategoryResponseDto / VehicleCategoryRequestDto** — category API
+  contracts.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
-- **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth).
+- **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth GET,
+  and authenticated JSON list/POST/PUT/DELETE).
 - **JsonMapperFactory** — shared JSON mapper configuration.
 - **AuthenticationService / AuthenticationResult** — the login use case.
 - **SessionManager / UserSession** — in-memory authenticated session.

@@ -48,8 +48,8 @@ class ViewManagerTest {
 					if ("main-view.fxml".equals(fileName(value))) {
 						referencesMain = true;
 					}
-					assertTrue(!isSectionPlaceholder(value),
-							"ViewManager must not embed the section-placeholder resource");
+					assertTrue(!isDomainOrPlaceholderResource(value),
+							"ViewManager must not embed section or domain view resources");
 				} catch (IllegalAccessException e) {
 					throw new AssertionError(e);
 				}
@@ -78,7 +78,9 @@ class ViewManagerTest {
 		return slash >= 0 ? path.substring(slash + 1) : path;
 	}
 
-	private static boolean isSectionPlaceholder(Object value) {
-		return "section-placeholder.fxml".equals(fileName(value));
+	private static boolean isDomainOrPlaceholderResource(Object value) {
+		String name = fileName(value);
+		return "section-placeholder.fxml".equals(name)
+				|| "vehicle-categories-view.fxml".equals(name);
 	}
 }

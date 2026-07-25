@@ -7,6 +7,7 @@ import be.condorcet.easycarrent.desktop.navigation.MainContentRouter;
 import be.condorcet.easycarrent.desktop.navigation.MainSection;
 import be.condorcet.easycarrent.desktop.service.BackendHealthResult;
 import be.condorcet.easycarrent.desktop.service.BackendHealthService;
+import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 
 import java.util.Optional;
@@ -85,17 +86,21 @@ public class MainViewController {
 	private MainContentRouter contentRouter;
 	private SessionManager sessionManager;
 	private ViewManager viewManager;
+	private VehicleCategoryService vehicleCategoryService;
 
 	public MainViewController() {
 		this.backendHealthService =
 				new BackendHealthService(new ApiClient(new ApiConfiguration().baseUri()));
 	}
 
-	/** Supplies session collaborators after {@code FXMLLoader.load()}. */
-	public void init(SessionManager sessionManager, ViewManager viewManager) {
+	/** Supplies collaborators after {@code FXMLLoader.load()} and builds navigation. */
+	public void init(SessionManager sessionManager, ViewManager viewManager,
+			VehicleCategoryService vehicleCategoryService) {
 		this.sessionManager = sessionManager;
 		this.viewManager = viewManager;
+		this.vehicleCategoryService = vehicleCategoryService;
 		renderSession();
+		setUpNavigation();
 	}
 
 	@FXML
@@ -103,11 +108,10 @@ public class MainViewController {
 		statusLabel.setText("Desktop client initialized successfully");
 		showPending();
 		checkBackendConnectivity();
-		setUpNavigation();
 	}
 
 	private void setUpNavigation() {
-		contentRouter = new MainContentRouter(contentHost);
+		contentRouter = new MainContentRouter(contentHost, vehicleCategoryService, sessionManager);
 
 		wireNavigation(dashboardNavigationButton, MainSection.DASHBOARD);
 		wireNavigation(vehicleCategoriesNavigationButton, MainSection.VEHICLE_CATEGORIES);

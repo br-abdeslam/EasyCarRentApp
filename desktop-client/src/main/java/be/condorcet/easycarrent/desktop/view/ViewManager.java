@@ -1,6 +1,7 @@
 package be.condorcet.easycarrent.desktop.view;
 
 import be.condorcet.easycarrent.desktop.service.AuthenticationService;
+import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 
 import java.io.IOException;
@@ -36,13 +37,16 @@ public final class ViewManager {
 	private final Stage stage;
 	private final AuthenticationService authenticationService;
 	private final SessionManager sessionManager;
+	private final VehicleCategoryService vehicleCategoryService;
 
 	public ViewManager(Stage stage, AuthenticationService authenticationService,
-			SessionManager sessionManager) {
+			SessionManager sessionManager, VehicleCategoryService vehicleCategoryService) {
 		this.stage = Objects.requireNonNull(stage, "stage");
 		this.authenticationService =
 				Objects.requireNonNull(authenticationService, "authenticationService");
 		this.sessionManager = Objects.requireNonNull(sessionManager, "sessionManager");
+		this.vehicleCategoryService =
+				Objects.requireNonNull(vehicleCategoryService, "vehicleCategoryService");
 	}
 
 	/** Builds the primary scene showing the login view and displays the stage. */
@@ -76,7 +80,7 @@ public final class ViewManager {
 		FXMLLoader loader = new FXMLLoader(requireResource(ViewManager.MAIN_FXML));
 		Parent root = load(loader);
 		MainViewController controller = loader.getController();
-		controller.init(sessionManager, this);
+		controller.init(sessionManager, this, vehicleCategoryService);
 		return root;
 	}
 

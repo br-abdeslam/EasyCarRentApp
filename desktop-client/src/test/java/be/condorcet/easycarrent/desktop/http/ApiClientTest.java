@@ -17,6 +17,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -192,5 +194,103 @@ class ApiClientTest {
 				assertInstanceOf(ApiConnectionException.class, thrown.getCause());
 		assertFalse(ex.getMessage().contains(TEST_PASSWORD),
 				"exception message must not expose the password");
+	}
+
+	// --- Generic authenticated JSON operations ---------------------------------
+
+	private static final String EXPECTED_AUTH = "Basic " + Base64.getEncoder().encodeToString(
+			(TEST_USERNAME + ":" + TEST_PASSWORD).getBytes(StandardCharsets.UTF_8));
+
+	@Test
+	void authenticatedJsonGetSendsBasicAuthorizationAndReturnsTyped() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(200,
+				"{\"status\":200,\"message\":\"ok\"}"));
+
+		ApiErrorDto dto = client(http).getJson(VEHICLES_PATH, ApiErrorDto.class, testCredentials()).join();
+
+		assertEquals(EXPECTED_AUTH,
+				http.lastRequest().headers().firstValue("Authorization").orElseThrow());
+		assertEquals("ok", dto.message());
+	}
+
+	@Test
+	void authenticatedJsonListDeserializes() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(200,
+				"[{\"status\":200,\"message\":\"a\"},{\"status\":200,\"message\":\"b\"}]"));
+
+		List<ApiErrorDto> list =
+				client(http).getJsonList(VEHICLES_PATH, ApiErrorDto.class, testCredentials()).join();
+
+		assertEquals(2, list.size());
+		assertEquals("a", list.get(0).message());
+	}
+
+	@Test
+	void postSendsPostMethodJsonContentTypeAndBody() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(201,
+				"{\"status\":201,\"message\":\"created\"}"));
+
+		ApiErrorDto dto = client(http)
+				.postJson(VEHICLES_PATH, Map.of("name", "Compact"), ApiErrorDto.class, testCredentials())
+				.join();
+
+		assertEquals("POST", http.lastRequest().method());
+		assertEquals("application/json",
+				http.lastRequest().headers().firstValue("Content-Type").orElseThrow());
+		assertTrue(http.lastRequestBody().contains("\"name\":\"Compact\""));
+		assertEquals("created", dto.message());
+	}
+
+	@Test
+	void putUsesPutMethodResolvedUriAndBody() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(200,
+				"{\"status\":200,\"message\":\"updated\"}"));
+
+		client(http).putJson("/api/categories/5", Map.of("name", "Renamed"), ApiErrorDto.class,
+				testCredentials()).join();
+
+		assertEquals("PUT", http.lastRequest().method());
+		assertEquals("http://localhost:8080/api/categories/5", http.lastRequest().uri().toString());
+		assertTrue(http.lastRequestBody().contains("\"name\":\"Renamed\""));
+	}
+
+	@Test
+	void deleteUsesDeleteMethodAndHandlesNoContent() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(204, ""));
+
+		client(http).delete("/api/categories/5", testCredentials()).join();
+
+		assertEquals("DELETE", http.lastRequest().method());
+		assertEquals("http://localhost:8080/api/categories/5", http.lastRequest().uri().toString());
+	}
+
+	@Test
+	void validationResponsePreservesApiErrorDto() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(400,
+				"{\"status\":400,\"error\":\"Bad Request\",\"message\":\"Validation failed\","
+						+ "\"path\":\"/api/categories\",\"validationErrors\":{\"name\":\"is required\"}}"));
+
+		CompletableFuture<ApiErrorDto> future =
+				client(http).postJson("/api/categories", Map.of(), ApiErrorDto.class, testCredentials());
+		CompletionException thrown = assertThrows(CompletionException.class, future::join);
+
+		ApiRequestException ex = assertInstanceOf(ApiRequestException.class, thrown.getCause());
+		assertEquals(400, ex.status());
+		assertEquals("is required",
+				ex.apiError().orElseThrow().validationErrors().get("name"));
+	}
+
+	@Test
+	void errorStatusesRemainApiRequestException() {
+		for (int status : new int[] {401, 403, 404, 409}) {
+			RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(status, ""));
+
+			CompletableFuture<ApiErrorDto> future =
+					client(http).getJson("/api/categories", ApiErrorDto.class, testCredentials());
+			CompletionException thrown = assertThrows(CompletionException.class, future::join);
+
+			ApiRequestException ex = assertInstanceOf(ApiRequestException.class, thrown.getCause());
+			assertEquals(status, ex.status());
+		}
 	}
 }

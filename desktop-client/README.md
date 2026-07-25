@@ -9,11 +9,36 @@ module is a standalone Maven project, independent from the backend.
 
 ## Current scope
 
-The client has an MVC/FXML/CSS architecture and a reusable, non-blocking HTTP
-and JSON foundation. On startup it checks backend connectivity against the
-public `/api/ping` endpoint and shows the result. It does **not** yet include
-authentication, navigation, or any domain screens (vehicles, customers, rentals,
-payments, maintenance).
+The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
+JSON foundation, and a login workflow. It starts on a login screen, authenticates
+against the backend using HTTP Basic, keeps the session in memory, and then shows
+the main view with the authenticated username and role and a logout action. It
+does **not** yet include the full application navigation or any domain screens
+(vehicles, customers, rentals, payments, maintenance).
+
+## Login and authentication
+
+- **Login screen** — the application opens on a login view with username and
+  password fields; pressing Enter submits.
+- **HTTP Basic** — credentials are verified asynchronously against a protected
+  read endpoint (`GET /api/vehicles`); a `2xx` confirms the credentials, `401`
+  means invalid username or password, and a connection failure reports the
+  backend as unavailable. Wrong credentials keep the user on the login view.
+- **Role resolution** — the backend exposes no authenticated-identity endpoint,
+  so after successful authentication the role is mapped from the fixed
+  development accounts defined in the backend security configuration
+  (`user` → USER, `admin` → ADMIN). This mapping is **development-only** and
+  would be replaced by a backend identity endpoint if the accounts became
+  dynamic.
+- **Session** — the authenticated username, role, and credentials are held only
+  in application memory for the lifetime of the process. **Credentials are never
+  persisted**, never written to configuration, never logged, and the password is
+  never displayed after login.
+- **Logout** — clears the in-memory session and returns to the login screen; the
+  previous credentials become unreachable afterwards.
+
+This uses development Basic authentication for the course. Tokens, JWT,
+remember-me, and persistent login are intentionally **not** implemented.
 
 ## Prerequisites
 
@@ -33,8 +58,9 @@ src/main/resources/be/condorcet/easycarrent/desktop/config/desktop.properties
 api.base-url=http://localhost:8080
 ```
 
-No credentials are stored in the client; the connectivity check uses the public
-`/api/ping` endpoint, which requires no authentication.
+No credentials are stored in the client or in this file; the connectivity check
+uses the public `/api/ping` endpoint, and login credentials are entered at
+runtime and held only in memory.
 
 ## HTTP and JSON foundation
 
@@ -61,34 +87,36 @@ desktop-client/
     │   │   ├── module-info.java
     │   │   └── be/condorcet/easycarrent/desktop/
     │   │       ├── App.java
+    │   │       ├── auth/{BasicCredentials, DesktopUserRole, AuthenticatedUser}.java
     │   │       ├── config/ApiConfiguration.java
     │   │       ├── dto/ApiErrorDto.java
-    │   │       ├── http/ApiClient.java
-    │   │       ├── http/JsonMapperFactory.java
-    │   │       ├── http/ApiRequestException.java
-    │   │       ├── http/ApiConnectionException.java
-    │   │       ├── service/BackendHealthService.java
-    │   │       ├── service/BackendHealthResult.java
-    │   │       └── view/MainViewController.java
+    │   │       ├── http/{ApiClient, JsonMapperFactory}.java
+    │   │       ├── http/{ApiRequestException, ApiConnectionException}.java
+    │   │       ├── service/{BackendHealthService, BackendHealthResult}.java
+    │   │       ├── service/{AuthenticationService, AuthenticationResult}.java
+    │   │       ├── session/{SessionManager, UserSession}.java
+    │   │       └── view/{ViewManager, LoginController, MainViewController}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
-    │       └── view/{main-view.fxml, app.css}
+    │       └── view/{login-view.fxml, main-view.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
 
 ### Responsibilities
 
-- **App.java** — application bootstrap: loads the FXML through `FXMLLoader`,
-  applies `app.css`, and shows the primary stage. No view logic.
-- **MainViewController.java** — initial view logic and UI state, including the
-  asynchronous backend connectivity check.
+- **App.java** — application bootstrap: assembles the shared services and shows
+  the login view through the `ViewManager`. No view logic.
+- **ViewManager** — minimal router that swaps between the login and main views.
+- **LoginController / MainViewController** — UI events and state only.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
-- **ApiClient** — reusable asynchronous HTTP layer.
+- **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth).
 - **JsonMapperFactory** — shared JSON mapper configuration.
+- **AuthenticationService / AuthenticationResult** — the login use case.
+- **SessionManager / UserSession** — in-memory authenticated session.
+- **BasicCredentials / DesktopUserRole / AuthenticatedUser** — auth models.
 - **BackendHealthService / BackendHealthResult** — the connectivity use case.
-- **main-view.fxml** — defines the view layout.
-- **app.css** — defines the appearance.
+- **login-view.fxml, main-view.fxml, app.css** — view structure and appearance.
 
 ## Build
 
@@ -110,7 +138,7 @@ mvn javafx:run
 
 ## Running the backend
 
-The connectivity check needs the backend running. Start it using the
+Login and the connectivity check need the backend running. Start it using the
 established repository instructions:
 
 1. Start PostgreSQL from `database/`:
@@ -128,13 +156,21 @@ established repository instructions:
 The API listens on `http://localhost:8080`, and `/api/ping` is publicly
 accessible.
 
-## Expected initial screen
+The API listens on `http://localhost:8080`. `/api/ping` is public; `GET
+/api/vehicles` (used to validate login) requires an authenticated USER or ADMIN.
 
-A resizable window titled **Easy Car Rent** displaying:
+## Expected screens
 
-- the heading **Easy Car Rent**;
-- the status message **Desktop client initialized successfully**;
-- a backend connectivity indicator showing **Backend connected** when the API is
-  reachable, or **Backend unavailable** when it is not.
+A resizable window titled **Easy Car Rent**:
 
-The window can be resized and closes normally.
+- **Login** — username and password fields with a **Sign in** button. Invalid
+  credentials or an unavailable backend keep the user on this screen with a safe
+  message; the password field is cleared after each attempt.
+- **Main** — after a successful login, shows the heading **Easy Car Rent**, the
+  message **Desktop client initialized successfully**, a backend connectivity
+  indicator (**Backend connected** / **Backend unavailable**), and a session bar
+  with the authenticated username, the role (**USER** or **ADMIN**), and a
+  **Log out** button that returns to the login screen.
+
+The window can be resized and closes normally. Complete navigation and domain
+screens are not yet implemented.

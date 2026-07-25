@@ -41,3 +41,111 @@
 	-fx-text-fill: #8a1c1c;
 	-fx-background-color: #f7d9d9;
 }
+
+/* Login view */
+.login-card {
+	-fx-background-color: #ffffff;
+	-fx-background-radius: 14;
+	-fx-border-color: #dbe0e6;
+	-fx-border-radius: 14;
+	-fx-padding: 8;
+}
+
+.login-title {
+	-fx-font-size: 26px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2933;
+}
+
+.login-subtitle {
+	-fx-font-size: 14px;
+	-fx-text-fill: #7b8794;
+}
+
+.login-field-label {
+	-fx-font-size: 12px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #52606d;
+}
+
+.login-field {
+	-fx-pref-width: 280px;
+	-fx-font-size: 14px;
+}
+
+.login-field:focused {
+	-fx-border-color: #2b6cb0;
+	-fx-border-width: 1.5;
+	-fx-border-radius: 4;
+}
+
+.login-button {
+	-fx-pref-width: 280px;
+	-fx-font-size: 14px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #ffffff;
+	-fx-background-color: #2b6cb0;
+	-fx-background-radius: 6;
+	-fx-padding: 8 16 8 16;
+}
+
+.login-button:hover {
+	-fx-background-color: #245a94;
+}
+
+.login-button:focused {
+	-fx-border-color: #10314f;
+	-fx-border-width: 1.5;
+	-fx-border-radius: 6;
+}
+
+.login-message {
+	-fx-font-size: 13px;
+	-fx-text-fill: #52606d;
+}
+
+.login-message-pending {
+	-fx-text-fill: #62543b;
+}
+
+.login-message-error {
+	-fx-text-fill: #8a1c1c;
+	-fx-font-weight: bold;
+}
+
+/* Authenticated session bar */
+.session-bar {
+	-fx-background-color: #e9edf2;
+}
+
+.session-username {
+	-fx-font-size: 13px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2933;
+}
+
+.session-role {
+	-fx-font-size: 12px;
+	-fx-text-fill: #ffffff;
+	-fx-background-color: #3c4a5a;
+	-fx-background-radius: 10;
+	-fx-padding: 2 10 2 10;
+}
+
+.logout-button {
+	-fx-font-size: 12px;
+	-fx-text-fill: #1f2933;
+	-fx-background-color: #cfd6de;
+	-fx-background-radius: 6;
+	-fx-padding: 4 12 4 12;
+}
+
+.logout-button:hover {
+	-fx-background-color: #bcc5d0;
+}
+
+.logout-button:focused {
+	-fx-border-color: #2b6cb0;
+	-fx-border-width: 1.5;
+	-fx-border-radius: 6;
+}

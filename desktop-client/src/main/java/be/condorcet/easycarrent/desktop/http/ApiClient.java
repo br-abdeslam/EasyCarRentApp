@@ -1,5 +1,6 @@
 package be.condorcet.easycarrent.desktop.http;
 
+import be.condorcet.easycarrent.desktop.auth.BasicCredentials;
 import be.condorcet.easycarrent.desktop.dto.ApiErrorDto;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,8 +22,12 @@ import java.util.concurrent.CompletionException;
  * {@link ObjectMapper}. All operations are asynchronous and return a
  * {@link CompletableFuture}; nothing here blocks the calling thread. Transport
  * failures surface as {@link ApiConnectionException} and non-2xx responses as
- * {@link ApiRequestException}. This class contains no UI logic and no
- * authentication.</p>
+ * {@link ApiRequestException}. This class contains no UI logic.</p>
+ *
+ * <p>Requests are anonymous by default. HTTP Basic authentication is applied
+ * only when {@link BasicCredentials} are supplied explicitly to an authenticated
+ * operation; the generated {@code Authorization} header is never retained,
+ * logged, or included in exceptions.</p>
  */
 public final class ApiClient {
 
@@ -71,7 +76,21 @@ public final class ApiClient {
 	 * @return a future completing with the response body, or empty for 204
 	 */
 	public CompletableFuture<String> getText(String path) {
-		HttpRequest request = buildGet(path, ACCEPT_TEXT);
+		HttpRequest request = buildGet(path, ACCEPT_TEXT, null);
+		return send(request).thenApply(response -> readTextBody(path, response));
+	}
+
+	/**
+	 * Performs an asynchronous authenticated {@code GET} expecting a text or JSON
+	 * body, applying HTTP Basic authentication from the supplied credentials.
+	 *
+	 * @param path        API path, absolute or relative
+	 * @param credentials credentials used to build the {@code Authorization} header
+	 * @return a future completing with the response body, or empty for 204
+	 */
+	public CompletableFuture<String> getText(String path, BasicCredentials credentials) {
+		Objects.requireNonNull(credentials, "credentials");
+		HttpRequest request = buildGet(path, ACCEPT_TEXT, credentials);
 		return send(request).thenApply(response -> readTextBody(path, response));
 	}
 
@@ -85,16 +104,18 @@ public final class ApiClient {
 	 */
 	public <T> CompletableFuture<T> getJson(String path, Class<T> type) {
 		Objects.requireNonNull(type, "type");
-		HttpRequest request = buildGet(path, ACCEPT_JSON);
+		HttpRequest request = buildGet(path, ACCEPT_JSON, null);
 		return send(request).thenApply(response -> readJsonBody(path, response, type));
 	}
 
-	private HttpRequest buildGet(String path, String acceptValue) {
-		return HttpRequest.newBuilder(resolve(path))
+	private HttpRequest buildGet(String path, String acceptValue, BasicCredentials credentials) {
+		HttpRequest.Builder builder = HttpRequest.newBuilder(resolve(path))
 				.timeout(requestTimeout)
-				.header("Accept", acceptValue)
-				.GET()
-				.build();
+				.header("Accept", acceptValue);
+		if (credentials != null) {
+			builder.header("Authorization", credentials.toAuthorizationHeader());
+		}
+		return builder.GET().build();
 	}
 
 	private CompletableFuture<HttpResponse<String>> send(HttpRequest request) {

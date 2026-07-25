@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import be.condorcet.easycarrent.desktop.auth.BasicCredentials;
 import be.condorcet.easycarrent.desktop.dto.ApiErrorDto;
 import be.condorcet.easycarrent.desktop.support.FakeHttpResponse;
 import be.condorcet.easycarrent.desktop.support.RecordingHttpClient;
@@ -13,7 +14,9 @@ import be.condorcet.easycarrent.desktop.support.RecordingHttpClient;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -25,9 +28,16 @@ class ApiClientTest {
 	private static final Duration TIMEOUT = Duration.ofSeconds(7);
 	private static final String PING_PATH = "/api/ping";
 	private static final String PING_BODY = "Easy Car Rent API is running";
+	private static final String VEHICLES_PATH = "/api/vehicles";
+	private static final String TEST_USERNAME = "test-user";
+	private static final String TEST_PASSWORD = "fictional-password";
 
 	private ApiClient client(RecordingHttpClient http) {
 		return new ApiClient(BASE_URI, http, JsonMapperFactory.create(), TIMEOUT);
+	}
+
+	private static BasicCredentials testCredentials() {
+		return new BasicCredentials(TEST_USERNAME, TEST_PASSWORD);
 	}
 
 	@Test
@@ -136,5 +146,51 @@ class ApiClientTest {
 		assertFalse(future.isDone(), "sendAsync must not block until the response is available");
 		pending.complete(new FakeHttpResponse(200, PING_BODY));
 		assertEquals(PING_BODY, future.join());
+	}
+
+	@Test
+	void authenticatedGetSendsBasicAuthorizationHeader() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(200, "[]"));
+		String expectedHeader = "Basic " + Base64.getEncoder().encodeToString(
+				(TEST_USERNAME + ":" + TEST_PASSWORD).getBytes(StandardCharsets.UTF_8));
+
+		client(http).getText(VEHICLES_PATH, testCredentials()).join();
+
+		assertEquals(expectedHeader,
+				http.lastRequest().headers().firstValue("Authorization").orElseThrow());
+	}
+
+	@Test
+	void authenticatedGetReturnsBody() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(200, "[]"));
+
+		assertEquals("[]", client(http).getText(VEHICLES_PATH, testCredentials()).join());
+	}
+
+	@Test
+	void authenticatedUnauthorizedBecomesApiRequestExceptionStatus401() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(401, ""));
+
+		CompletableFuture<String> future = client(http).getText(VEHICLES_PATH, testCredentials());
+		CompletionException thrown = assertThrows(CompletionException.class, future::join);
+
+		ApiRequestException ex = assertInstanceOf(ApiRequestException.class, thrown.getCause());
+		assertEquals(401, ex.status());
+		assertFalse(ex.getMessage().contains(TEST_PASSWORD),
+				"exception message must not expose the password");
+	}
+
+	@Test
+	void authenticatedTransportFailureDoesNotExposeCredentials() {
+		RecordingHttpClient http =
+				RecordingHttpClient.failingWith(new ConnectException("Connection refused"));
+
+		CompletableFuture<String> future = client(http).getText(VEHICLES_PATH, testCredentials());
+		CompletionException thrown = assertThrows(CompletionException.class, future::join);
+
+		ApiConnectionException ex =
+				assertInstanceOf(ApiConnectionException.class, thrown.getCause());
+		assertFalse(ex.getMessage().contains(TEST_PASSWORD),
+				"exception message must not expose the password");
 	}
 }

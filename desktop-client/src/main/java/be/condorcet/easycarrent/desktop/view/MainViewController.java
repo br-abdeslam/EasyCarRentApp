@@ -1,23 +1,29 @@
 package be.condorcet.easycarrent.desktop.view;
 
+import be.condorcet.easycarrent.desktop.auth.AuthenticatedUser;
 import be.condorcet.easycarrent.desktop.config.ApiConfiguration;
 import be.condorcet.easycarrent.desktop.http.ApiClient;
 import be.condorcet.easycarrent.desktop.service.BackendHealthResult;
 import be.condorcet.easycarrent.desktop.service.BackendHealthService;
+import be.condorcet.easycarrent.desktop.session.SessionManager;
+
+import java.util.Optional;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
 /**
  * Controller for the main view.
  *
  * <p>Instantiated by {@link javafx.fxml.FXMLLoader} via its public no-argument
- * constructor. It keeps the initialization confirmation and adds a non-blocking
- * backend connectivity check: the health call runs asynchronously off the JavaFX
- * Application Thread, and the resulting UI update is marshalled back onto it with
- * {@link Platform#runLater(Runnable)}. Connectivity state is conveyed through CSS
- * classes only; no inline styles are used, and no HTTP work happens here.</p>
+ * constructor. It preserves the initialization confirmation and the non-blocking
+ * backend connectivity check, and adds authenticated-session display and logout.
+ * Session collaborators are supplied through {@link #init} after loading; the
+ * username and role are shown but the password is never accessed or displayed.
+ * UI updates from async work use {@link Platform#runLater(Runnable)} and state is
+ * conveyed through CSS classes only.</p>
  */
 public class MainViewController {
 
@@ -32,11 +38,30 @@ public class MainViewController {
 	@FXML
 	private Label backendStatusLabel;
 
+	@FXML
+	private Label usernameLabel;
+
+	@FXML
+	private Label roleLabel;
+
+	@FXML
+	private Button logoutButton;
+
 	private final BackendHealthService backendHealthService;
+
+	private SessionManager sessionManager;
+	private ViewManager viewManager;
 
 	public MainViewController() {
 		this.backendHealthService =
 				new BackendHealthService(new ApiClient(new ApiConfiguration().baseUri()));
+	}
+
+	/** Supplies session collaborators after {@code FXMLLoader.load()}. */
+	public void init(SessionManager sessionManager, ViewManager viewManager) {
+		this.sessionManager = sessionManager;
+		this.viewManager = viewManager;
+		renderSession();
 	}
 
 	@FXML
@@ -44,6 +69,23 @@ public class MainViewController {
 		statusLabel.setText("Desktop client initialized successfully");
 		showPending();
 		checkBackendConnectivity();
+	}
+
+	private void renderSession() {
+		Optional<AuthenticatedUser> current = sessionManager.currentUser();
+		if (current.isEmpty()) {
+			viewManager.showLogin();
+			return;
+		}
+		AuthenticatedUser user = current.get();
+		usernameLabel.setText(user.username());
+		roleLabel.setText(user.role().name());
+	}
+
+	@FXML
+	private void handleLogout() {
+		sessionManager.logout();
+		viewManager.showLogin();
 	}
 
 	private void checkBackendConnectivity() {

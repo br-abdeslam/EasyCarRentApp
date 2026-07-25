@@ -1,9 +1,11 @@
 package be.condorcet.easycarrent.desktop.navigation;
 
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
+import be.condorcet.easycarrent.desktop.service.VehicleService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 import be.condorcet.easycarrent.desktop.view.SectionPlaceholderController;
 import be.condorcet.easycarrent.desktop.view.VehicleCategoryController;
+import be.condorcet.easycarrent.desktop.view.VehicleController;
 
 import java.io.IOException;
 import java.net.URL;
@@ -18,8 +20,9 @@ import javafx.scene.layout.StackPane;
  *
  * <p>Given the shell's central {@link StackPane}, it loads the section's view and
  * replaces the host's content with the new node. Implemented sections load their
- * own view (Vehicle Categories loads {@code vehicle-categories-view.fxml});
- * unfinished sections load the reusable {@code section-placeholder.fxml}. It
+ * own view (Vehicle Categories loads {@code vehicle-categories-view.fxml} and
+ * Vehicles loads {@code vehicles-view.fxml}); unfinished sections load the
+ * reusable {@code section-placeholder.fxml}. It
  * tracks the current section through a {@link NavigationState} and defaults to
  * {@link MainSection#DASHBOARD}. It injects the shared domain service into a
  * loaded domain controller but performs no API operations itself. It owns no
@@ -32,17 +35,23 @@ public final class MainContentRouter {
 			"/be/condorcet/easycarrent/desktop/view/section-placeholder.fxml";
 	static final String VEHICLE_CATEGORIES_FXML =
 			"/be/condorcet/easycarrent/desktop/view/vehicle-categories-view.fxml";
+	static final String VEHICLES_FXML =
+			"/be/condorcet/easycarrent/desktop/view/vehicles-view.fxml";
 
 	private final StackPane contentHost;
 	private final VehicleCategoryService vehicleCategoryService;
+	private final VehicleService vehicleService;
 	private final SessionManager sessionManager;
 	private final NavigationState state = new NavigationState();
 
 	public MainContentRouter(StackPane contentHost,
-			VehicleCategoryService vehicleCategoryService, SessionManager sessionManager) {
+			VehicleCategoryService vehicleCategoryService, VehicleService vehicleService,
+			SessionManager sessionManager) {
 		this.contentHost = Objects.requireNonNull(contentHost, "contentHost must not be null");
 		this.vehicleCategoryService =
 				Objects.requireNonNull(vehicleCategoryService, "vehicleCategoryService must not be null");
+		this.vehicleService =
+				Objects.requireNonNull(vehicleService, "vehicleService must not be null");
 		this.sessionManager = Objects.requireNonNull(sessionManager, "sessionManager must not be null");
 	}
 
@@ -69,20 +78,31 @@ public final class MainContentRouter {
 
 	/** @return the FXML resource path for the given section (pure mapping) */
 	static String resourceFor(MainSection section) {
-		return section == MainSection.VEHICLE_CATEGORIES ? VEHICLE_CATEGORIES_FXML : PLACEHOLDER_FXML;
+		return switch (section) {
+			case VEHICLE_CATEGORIES -> VEHICLE_CATEGORIES_FXML;
+			case VEHICLES -> VEHICLES_FXML;
+			default -> PLACEHOLDER_FXML;
+		};
 	}
 
 	private Parent loadContent(MainSection section) {
 		FXMLLoader loader = new FXMLLoader(requireResource(resourceFor(section)));
 		Parent content = load(loader);
-		if (section == MainSection.VEHICLE_CATEGORIES) {
-			VehicleCategoryController controller = loader.getController();
-			// Dependencies are injected only after loading, so the initial API load
-			// is started here rather than in the controller's FXML initialize().
-			controller.init(vehicleCategoryService, sessionManager);
-		} else {
-			SectionPlaceholderController controller = loader.getController();
-			controller.setSection(section);
+		// Dependencies are injected only after loading, so any initial API load is
+		// started by the controller's init() here, not in its FXML initialize().
+		switch (section) {
+			case VEHICLE_CATEGORIES -> {
+				VehicleCategoryController controller = loader.getController();
+				controller.init(vehicleCategoryService, sessionManager);
+			}
+			case VEHICLES -> {
+				VehicleController controller = loader.getController();
+				controller.init(vehicleService, vehicleCategoryService, sessionManager);
+			}
+			default -> {
+				SectionPlaceholderController controller = loader.getController();
+				controller.setSection(section);
+			}
 		}
 		return content;
 	}

@@ -372,3 +372,73 @@
 .secondary-button:disabled {
 	-fx-opacity: 0.55;
 }
+
+/* Vehicles screen (reuses the shared button, form, and read-only styles) */
+.vehicle-view {
+	-fx-background-color: #ffffff;
+}
+
+.vehicle-header {
+	-fx-padding: 0 0 4 0;
+}
+
+.vehicle-toolbar {
+	-fx-padding: 0 0 4 0;
+}
+
+.vehicle-table {
+	-fx-font-size: 13px;
+}
+
+.vehicle-empty-state {
+	-fx-font-size: 15px;
+	-fx-text-fill: #7b8794;
+	-fx-padding: 24;
+}
+
+.vehicle-loading {
+	-fx-progress-color: #2b6cb0;
+}
+
+.vehicle-status {
+	-fx-font-size: 13px;
+	-fx-text-fill: #52606d;
+}
+
+.vehicle-status-success {
+	-fx-text-fill: #10643b;
+	-fx-font-weight: bold;
+}
+
+.vehicle-status-error {
+	-fx-text-fill: #8a1c1c;
+	-fx-font-weight: bold;
+}
+
+.vehicle-editor {
+	-fx-background-color: #f4f6f9;
+	-fx-background-radius: 10;
+	-fx-border-color: #dbe0e6;
+	-fx-border-radius: 10;
+	-fx-padding: 16;
+}
+
+.vehicle-editor-title {
+	-fx-font-size: 18px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2933;
+}
+
+.vehicle-category-field {
+	-fx-font-size: 13px;
+}
+
+.vehicle-state-label {
+	-fx-font-size: 12px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #3c4a5a;
+}
+
+.vehicle-rate-column {
+	-fx-alignment: center-right;
+}

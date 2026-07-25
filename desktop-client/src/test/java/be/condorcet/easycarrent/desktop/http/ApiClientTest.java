@@ -293,4 +293,44 @@ class ApiClientTest {
 			assertEquals(status, ex.status());
 		}
 	}
+
+	// --- Vehicle serialization through the generic operations ------------------
+
+	@Test
+	void vehicleListGetDeserializesNestedFieldsAndStatusEnum() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(200,
+				"[{\"id\":1,\"registrationNumber\":\"A\",\"brand\":\"B\",\"model\":\"M\","
+						+ "\"dailyPrice\":9.99,\"status\":\"MAINTENANCE\",\"categoryId\":2,"
+						+ "\"categoryName\":\"Van\"}]"));
+
+		List<be.condorcet.easycarrent.desktop.dto.VehicleResponseDto> vehicles = client(http)
+				.getJsonList("/api/vehicles",
+						be.condorcet.easycarrent.desktop.dto.VehicleResponseDto.class, testCredentials())
+				.join();
+
+		assertEquals("http://localhost:8080/api/vehicles", http.lastRequest().uri().toString());
+		assertEquals(1, vehicles.size());
+		assertEquals(be.condorcet.easycarrent.desktop.dto.VehicleStatus.MAINTENANCE,
+				vehicles.get(0).status());
+		assertEquals(new java.math.BigDecimal("9.99"), vehicles.get(0).dailyPrice());
+		assertEquals("Van", vehicles.get(0).categoryName());
+	}
+
+	@Test
+	void vehicleCreateSerializesBigDecimalAndOmitsStatus() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(201,
+				"{\"id\":9,\"registrationNumber\":\"A\",\"brand\":\"B\",\"model\":\"M\","
+						+ "\"dailyPrice\":42.50,\"status\":\"AVAILABLE\",\"categoryId\":3,"
+						+ "\"categoryName\":\"C\"}"));
+		var request = new be.condorcet.easycarrent.desktop.dto.VehicleRequestDto(
+				"A", "B", "M", 2022, "Blue", new java.math.BigDecimal("42.50"), 100L, 3L);
+
+		client(http).postJson("/api/vehicles", request,
+				be.condorcet.easycarrent.desktop.dto.VehicleResponseDto.class, testCredentials()).join();
+
+		assertEquals("POST", http.lastRequest().method());
+		assertTrue(http.lastRequestBody().contains("\"dailyPrice\":42.50"));
+		assertTrue(http.lastRequestBody().contains("\"categoryId\":3"));
+		assertFalse(http.lastRequestBody().contains("\"status\""));
+	}
 }

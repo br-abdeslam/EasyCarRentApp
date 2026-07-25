@@ -8,6 +8,7 @@ import be.condorcet.easycarrent.desktop.navigation.MainSection;
 import be.condorcet.easycarrent.desktop.service.BackendHealthResult;
 import be.condorcet.easycarrent.desktop.service.BackendHealthService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
+import be.condorcet.easycarrent.desktop.service.VehicleService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 
 import java.util.Optional;
@@ -87,6 +88,7 @@ public class MainViewController {
 	private SessionManager sessionManager;
 	private ViewManager viewManager;
 	private VehicleCategoryService vehicleCategoryService;
+	private VehicleService vehicleService;
 
 	public MainViewController() {
 		this.backendHealthService =
@@ -95,10 +97,11 @@ public class MainViewController {
 
 	/** Supplies collaborators after {@code FXMLLoader.load()} and builds navigation. */
 	public void init(SessionManager sessionManager, ViewManager viewManager,
-			VehicleCategoryService vehicleCategoryService) {
+			VehicleCategoryService vehicleCategoryService, VehicleService vehicleService) {
 		this.sessionManager = sessionManager;
 		this.viewManager = viewManager;
 		this.vehicleCategoryService = vehicleCategoryService;
+		this.vehicleService = vehicleService;
 		renderSession();
 		setUpNavigation();
 	}
@@ -111,7 +114,8 @@ public class MainViewController {
 	}
 
 	private void setUpNavigation() {
-		contentRouter = new MainContentRouter(contentHost, vehicleCategoryService, sessionManager);
+		contentRouter = new MainContentRouter(contentHost, vehicleCategoryService, vehicleService,
+				sessionManager);
 
 		wireNavigation(dashboardNavigationButton, MainSection.DASHBOARD);
 		wireNavigation(vehicleCategoriesNavigationButton, MainSection.VEHICLE_CATEGORIES);

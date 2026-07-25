@@ -3,6 +3,8 @@ package be.condorcet.easycarrent.desktop.view;
 import be.condorcet.easycarrent.desktop.auth.AuthenticatedUser;
 import be.condorcet.easycarrent.desktop.config.ApiConfiguration;
 import be.condorcet.easycarrent.desktop.http.ApiClient;
+import be.condorcet.easycarrent.desktop.navigation.MainContentRouter;
+import be.condorcet.easycarrent.desktop.navigation.MainSection;
 import be.condorcet.easycarrent.desktop.service.BackendHealthResult;
 import be.condorcet.easycarrent.desktop.service.BackendHealthService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
@@ -13,17 +15,21 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.StackPane;
 
 /**
- * Controller for the main view.
+ * Controller for the authenticated main shell.
  *
- * <p>Instantiated by {@link javafx.fxml.FXMLLoader} via its public no-argument
- * constructor. It preserves the initialization confirmation and the non-blocking
- * backend connectivity check, and adds authenticated-session display and logout.
- * Session collaborators are supplied through {@link #init} after loading; the
- * username and role are shown but the password is never accessed or displayed.
- * UI updates from async work use {@link Platform#runLater(Runnable)} and state is
- * conveyed through CSS classes only.</p>
+ * <p>Preserves the initialization confirmation, the non-blocking backend
+ * connectivity check, the authenticated-session display, and logout. It adds a
+ * persistent sidebar whose items route the central content through a
+ * {@link MainContentRouter}; the header, sidebar, session identity, and backend
+ * status remain visible while only the central content changes. Routing creates
+ * no new Scene or Stage, makes no domain API calls, and blocks nothing. Session
+ * collaborators are supplied through {@link #init} after loading; the password
+ * is never accessed or displayed.</p>
  */
 public class MainViewController {
 
@@ -47,8 +53,36 @@ public class MainViewController {
 	@FXML
 	private Button logoutButton;
 
+	@FXML
+	private StackPane contentHost;
+
+	@FXML
+	private ToggleGroup navigationToggleGroup;
+
+	@FXML
+	private ToggleButton dashboardNavigationButton;
+
+	@FXML
+	private ToggleButton vehicleCategoriesNavigationButton;
+
+	@FXML
+	private ToggleButton vehiclesNavigationButton;
+
+	@FXML
+	private ToggleButton customersNavigationButton;
+
+	@FXML
+	private ToggleButton rentalsNavigationButton;
+
+	@FXML
+	private ToggleButton paymentsNavigationButton;
+
+	@FXML
+	private ToggleButton maintenanceNavigationButton;
+
 	private final BackendHealthService backendHealthService;
 
+	private MainContentRouter contentRouter;
 	private SessionManager sessionManager;
 	private ViewManager viewManager;
 
@@ -69,6 +103,33 @@ public class MainViewController {
 		statusLabel.setText("Desktop client initialized successfully");
 		showPending();
 		checkBackendConnectivity();
+		setUpNavigation();
+	}
+
+	private void setUpNavigation() {
+		contentRouter = new MainContentRouter(contentHost);
+
+		wireNavigation(dashboardNavigationButton, MainSection.DASHBOARD);
+		wireNavigation(vehicleCategoriesNavigationButton, MainSection.VEHICLE_CATEGORIES);
+		wireNavigation(vehiclesNavigationButton, MainSection.VEHICLES);
+		wireNavigation(customersNavigationButton, MainSection.CUSTOMERS);
+		wireNavigation(rentalsNavigationButton, MainSection.RENTALS);
+		wireNavigation(paymentsNavigationButton, MainSection.PAYMENTS);
+		wireNavigation(maintenanceNavigationButton, MainSection.MAINTENANCE);
+
+		// Keep exactly one section selected: clicking the active item must not
+		// leave the sidebar with no selection.
+		navigationToggleGroup.selectedToggleProperty().addListener((observable, previous, current) -> {
+			if (current == null && previous != null) {
+				previous.setSelected(true);
+			}
+		});
+
+		contentRouter.showDefault();
+	}
+
+	private void wireNavigation(ToggleButton button, MainSection section) {
+		button.setOnAction(event -> contentRouter.show(section));
 	}
 
 	private void renderSession() {

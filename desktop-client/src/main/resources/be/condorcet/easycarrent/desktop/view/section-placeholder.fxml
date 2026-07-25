@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+	xmlns:fx="http://javafx.com/fxml"
+	fx:controller="be.condorcet.easycarrent.desktop.view.SectionPlaceholderController"
+	alignment="TOP_LEFT" spacing="12.0" styleClass="section-placeholder">
+	<padding>
+		<Insets top="28.0" right="28.0" bottom="28.0" left="28.0"/>
+	</padding>
+	<children>
+		<Label fx:id="sectionTitleLabel" styleClass="section-placeholder-title"/>
+		<Label fx:id="sectionDescriptionLabel" wrapText="true"
+			styleClass="section-placeholder-description"/>
+	</children>
+</VBox>

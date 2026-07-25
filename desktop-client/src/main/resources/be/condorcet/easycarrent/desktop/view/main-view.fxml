@@ -3,38 +3,84 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
 	xmlns:fx="http://javafx.com/fxml"
 	fx:controller="be.condorcet.easycarrent.desktop.view.MainViewController"
-	styleClass="app-root">
+	styleClass="app-root, main-shell">
+	<fx:define>
+		<ToggleGroup fx:id="navigationToggleGroup"/>
+	</fx:define>
 	<top>
-		<HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="session-bar">
+		<HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="app-header">
 			<padding>
 				<Insets top="12.0" right="20.0" bottom="12.0" left="20.0"/>
 			</padding>
 			<children>
-				<Label fx:id="usernameLabel" styleClass="session-username"/>
-				<Label fx:id="roleLabel" styleClass="session-role"/>
-				<Button fx:id="logoutButton" text="Log out" onAction="#handleLogout"
-					styleClass="logout-button"/>
+				<Label text="Easy Car Rent" styleClass="app-brand"/>
+				<Region HBox.hgrow="ALWAYS"/>
+				<HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="session-info">
+					<children>
+						<Label fx:id="usernameLabel" styleClass="session-username"/>
+						<Label fx:id="roleLabel" styleClass="session-role"/>
+						<Button fx:id="logoutButton" text="Log out" onAction="#handleLogout"
+							styleClass="logout-button"/>
+					</children>
+				</HBox>
 			</children>
 		</HBox>
 	</top>
-	<center>
-		<VBox alignment="CENTER" spacing="16.0">
+	<left>
+		<VBox spacing="6.0" styleClass="navigation-sidebar">
 			<padding>
-				<Insets top="32.0" right="32.0" bottom="32.0" left="32.0"/>
+				<Insets top="16.0" right="12.0" bottom="16.0" left="12.0"/>
 			</padding>
 			<children>
-				<Label text="Easy Car Rent" styleClass="app-title"/>
+				<ToggleButton fx:id="dashboardNavigationButton" text="Dashboard" selected="true"
+					maxWidth="Infinity" toggleGroup="$navigationToggleGroup"
+					styleClass="navigation-button"/>
+				<ToggleButton fx:id="vehicleCategoriesNavigationButton" text="Vehicle Categories"
+					maxWidth="Infinity" toggleGroup="$navigationToggleGroup"
+					styleClass="navigation-button"/>
+				<ToggleButton fx:id="vehiclesNavigationButton" text="Vehicles"
+					maxWidth="Infinity" toggleGroup="$navigationToggleGroup"
+					styleClass="navigation-button"/>
+				<ToggleButton fx:id="customersNavigationButton" text="Customers"
+					maxWidth="Infinity" toggleGroup="$navigationToggleGroup"
+					styleClass="navigation-button"/>
+				<ToggleButton fx:id="rentalsNavigationButton" text="Rentals"
+					maxWidth="Infinity" toggleGroup="$navigationToggleGroup"
+					styleClass="navigation-button"/>
+				<ToggleButton fx:id="paymentsNavigationButton" text="Payments"
+					maxWidth="Infinity" toggleGroup="$navigationToggleGroup"
+					styleClass="navigation-button"/>
+				<ToggleButton fx:id="maintenanceNavigationButton" text="Maintenance"
+					maxWidth="Infinity" toggleGroup="$navigationToggleGroup"
+					styleClass="navigation-button"/>
+			</children>
+		</VBox>
+	</left>
+	<center>
+		<StackPane fx:id="contentHost" styleClass="content-host"/>
+	</center>
+	<bottom>
+		<HBox alignment="CENTER_LEFT" spacing="16.0" styleClass="app-status-bar">
+			<padding>
+				<Insets top="8.0" right="20.0" bottom="8.0" left="20.0"/>
+			</padding>
+			<children>
 				<Label fx:id="statusLabel" styleClass="app-status"/>
+				<Region HBox.hgrow="ALWAYS"/>
 				<Label fx:id="backendStatusLabel" text="Checking backend connection..."
 					styleClass="backend-status, backend-status-pending"/>
 			</children>
-		</VBox>
-	</center>
+		</HBox>
+	</bottom>
 </BorderPane>

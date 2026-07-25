@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+	xmlns:fx="http://javafx.com/fxml"
+	fx:controller="be.condorcet.easycarrent.desktop.view.VehicleCategoryController"
+	spacing="14.0" styleClass="category-view">
+	<padding>
+		<Insets top="20.0" right="24.0" bottom="20.0" left="24.0"/>
+	</padding>
+	<children>
+		<HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="category-header">
+			<children>
+				<VBox spacing="2.0">
+					<children>
+						<Label text="Vehicle Categories" styleClass="category-editor-title"/>
+						<Label text="Manage the categories used to classify vehicles."
+							styleClass="category-status"/>
+					</children>
+				</VBox>
+				<Region HBox.hgrow="ALWAYS"/>
+				<Label fx:id="readOnlyNotice" text="Read-only: your role cannot modify categories."
+					visible="false" managed="false" styleClass="read-only-notice"/>
+				<ProgressIndicator fx:id="loadingIndicator" maxWidth="26.0" maxHeight="26.0"
+					visible="false" styleClass="category-loading"/>
+			</children>
+		</HBox>
+
+		<HBox spacing="10.0" styleClass="category-toolbar">
+			<children>
+				<Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh"
+					styleClass="secondary-button"/>
+				<Button fx:id="addButton" text="Add Category" onAction="#handleAdd"
+					styleClass="primary-button"/>
+				<Button fx:id="editButton" text="Edit" onAction="#handleEdit"
+					styleClass="secondary-button"/>
+				<Button fx:id="deleteButton" text="Delete" onAction="#handleDelete"
+					styleClass="danger-button"/>
+			</children>
+		</HBox>
+
+		<Label fx:id="statusMessageLabel" wrapText="true" visible="false" managed="false"
+			styleClass="category-status"/>
+
+		<TableView fx:id="categoryTable" VBox.vgrow="ALWAYS" styleClass="category-table">
+			<columns>
+				<TableColumn fx:id="idColumn" text="ID" prefWidth="70.0"/>
+				<TableColumn fx:id="nameColumn" text="Name" prefWidth="220.0"/>
+				<TableColumn fx:id="descriptionColumn" text="Description" prefWidth="360.0"/>
+			</columns>
+		</TableView>
+
+		<Label fx:id="emptyStateLabel" text="No categories yet."
+			visible="false" managed="false" styleClass="category-empty-state"/>
+
+		<VBox fx:id="categoryEditor" spacing="10.0" visible="false" managed="false"
+			styleClass="category-editor">
+			<children>
+				<Label fx:id="formTitleLabel" text="Add Category" styleClass="category-editor-title"/>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Name" minWidth="90.0" styleClass="form-label"/>
+						<TextField fx:id="categoryNameField" HBox.hgrow="ALWAYS"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" styleClass="form-row">
+					<children>
+						<Label text="Description" minWidth="90.0" styleClass="form-label"/>
+						<TextArea fx:id="categoryDescriptionArea" prefRowCount="3" wrapText="true"
+							HBox.hgrow="ALWAYS"/>
+					</children>
+				</HBox>
+				<Label fx:id="validationMessageLabel" wrapText="true"
+					visible="false" managed="false" styleClass="validation-message"/>
+				<HBox spacing="10.0">
+					<children>
+						<Button fx:id="saveButton" text="Save" onAction="#handleSave"
+							styleClass="primary-button"/>
+						<Button fx:id="cancelButton" text="Cancel" onAction="#handleCancel"
+							styleClass="secondary-button"/>
+					</children>
+				</HBox>
+			</children>
+		</VBox>
+	</children>
+</VBox>

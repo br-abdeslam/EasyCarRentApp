@@ -26,6 +26,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/login-view.fxml";
 	private static final String SECTION_PLACEHOLDER_FXML =
 			"/be/condorcet/easycarrent/desktop/view/section-placeholder.fxml";
+	private static final String VEHICLE_CATEGORIES_FXML =
+			"/be/condorcet/easycarrent/desktop/view/vehicle-categories-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -187,6 +189,84 @@ class AppResourcesTest {
 				"main-view.fxml must not use inline style attributes");
 		assertFalse(readResource(SECTION_PLACEHOLDER_FXML).contains("style=\""),
 				"section-placeholder.fxml must not use inline style attributes");
+		assertFalse(readResource(VEHICLE_CATEGORIES_FXML).contains("style=\""),
+				"vehicle-categories-view.fxml must not use inline style attributes");
+	}
+
+	@Test
+	void vehicleCategoriesFxmlExistsAndIsWellFormed() throws Exception {
+		assertNotNull(resource(VEHICLE_CATEGORIES_FXML),
+				"vehicle-categories-view.fxml must exist on the test classpath");
+		try (InputStream in = stream(VEHICLE_CATEGORIES_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"vehicle-categories-view.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void vehicleCategoriesFxmlDeclaresController() throws Exception {
+		String fxml = readResource(VEHICLE_CATEGORIES_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.VehicleCategoryController\""),
+				"vehicle-categories-view.fxml must declare VehicleCategoryController");
+	}
+
+	@Test
+	void vehicleCategoriesFxmlContainsTableAndColumns() throws Exception {
+		String fxml = readResource(VEHICLE_CATEGORIES_FXML);
+		assertTrue(fxml.contains("fx:id=\"categoryTable\""), "categoryTable required");
+		assertTrue(fxml.contains("fx:id=\"idColumn\""), "idColumn required");
+		assertTrue(fxml.contains("fx:id=\"nameColumn\""), "nameColumn required");
+		assertTrue(fxml.contains("fx:id=\"descriptionColumn\""), "descriptionColumn required");
+	}
+
+	@Test
+	void vehicleCategoriesFxmlContainsActionControls() throws Exception {
+		String fxml = readResource(VEHICLE_CATEGORIES_FXML);
+		assertTrue(fxml.contains("fx:id=\"refreshButton\""), "refreshButton required");
+		assertTrue(fxml.contains("fx:id=\"addButton\""), "addButton required");
+		assertTrue(fxml.contains("fx:id=\"editButton\""), "editButton required");
+		assertTrue(fxml.contains("fx:id=\"deleteButton\""), "deleteButton required");
+	}
+
+	@Test
+	void vehicleCategoriesFxmlContainsStateControls() throws Exception {
+		String fxml = readResource(VEHICLE_CATEGORIES_FXML);
+		assertTrue(fxml.contains("fx:id=\"loadingIndicator\""), "loadingIndicator required");
+		assertTrue(fxml.contains("fx:id=\"statusMessageLabel\""), "statusMessageLabel required");
+		assertTrue(fxml.contains("fx:id=\"emptyStateLabel\""), "emptyStateLabel required");
+	}
+
+	@Test
+	void vehicleCategoriesFxmlContainsFormControls() throws Exception {
+		String fxml = readResource(VEHICLE_CATEGORIES_FXML);
+		assertTrue(fxml.contains("fx:id=\"categoryNameField\""), "categoryNameField required");
+		assertTrue(fxml.contains("fx:id=\"categoryDescriptionArea\""),
+				"categoryDescriptionArea required");
+		assertTrue(fxml.contains("fx:id=\"saveButton\""), "saveButton required");
+		assertTrue(fxml.contains("fx:id=\"cancelButton\""), "cancelButton required");
+	}
+
+	@Test
+	void vehicleCategoriesFxmlHasNoStaticTableData() throws Exception {
+		String fxml = readResource(VEHICLE_CATEGORIES_FXML);
+		assertFalse(fxml.contains("<items>"),
+				"the category table must not define hardcoded rows");
+	}
+
+	@Test
+	void appStylesheetContainsCategoryClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		for (String cssClass : new String[] {
+				".category-view", ".category-header", ".category-toolbar", ".category-table",
+				".category-empty-state", ".category-loading", ".category-status",
+				".category-status-success", ".category-status-error", ".category-editor",
+				".category-editor-title", ".form-row", ".form-label", ".validation-message",
+				".primary-button", ".secondary-button", ".danger-button", ".read-only-notice"}) {
+			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
+		}
 	}
 
 	@Test

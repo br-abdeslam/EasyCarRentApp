@@ -3,6 +3,7 @@ package be.condorcet.easycarrent.desktop;
 import be.condorcet.easycarrent.desktop.config.ApiConfiguration;
 import be.condorcet.easycarrent.desktop.http.ApiClient;
 import be.condorcet.easycarrent.desktop.service.AuthenticationService;
+import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 import be.condorcet.easycarrent.desktop.view.ViewManager;
 
@@ -27,8 +28,11 @@ public class App extends Application {
 		SessionManager sessionManager = new SessionManager();
 		AuthenticationService authenticationService =
 				new AuthenticationService(apiClient, sessionManager);
+		VehicleCategoryService vehicleCategoryService =
+				new VehicleCategoryService(apiClient, sessionManager);
 
-		ViewManager viewManager = new ViewManager(stage, authenticationService, sessionManager);
+		ViewManager viewManager = new ViewManager(stage, authenticationService, sessionManager,
+				vehicleCategoryService);
 		viewManager.start();
 	}
 

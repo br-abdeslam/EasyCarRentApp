@@ -17,6 +17,8 @@
 			<children>
 				<Label text="Easy Car Rent" styleClass="app-title"/>
 				<Label fx:id="statusLabel" styleClass="app-status"/>
+				<Label fx:id="backendStatusLabel" text="Checking backend connection..."
+					styleClass="backend-status, backend-status-pending"/>
 			</children>
 		</VBox>
 	</center>

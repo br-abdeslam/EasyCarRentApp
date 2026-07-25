@@ -18,3 +18,26 @@
 	-fx-font-size: 15px;
 	-fx-text-fill: #52606d;
 }
+
+/* Backend connectivity indicator. State is switched by swapping style classes. */
+.backend-status {
+	-fx-font-size: 14px;
+	-fx-font-weight: bold;
+	-fx-padding: 6 14 6 14;
+	-fx-background-radius: 12;
+}
+
+.backend-status-pending {
+	-fx-text-fill: #62543b;
+	-fx-background-color: #fdf3d8;
+}
+
+.backend-status-connected {
+	-fx-text-fill: #10643b;
+	-fx-background-color: #d8f0e0;
+}
+
+.backend-status-unavailable {
+	-fx-text-fill: #8a1c1c;
+	-fx-background-color: #f7d9d9;
+}

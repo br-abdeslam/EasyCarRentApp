@@ -23,6 +23,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/main-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
+	private static final String DESKTOP_PROPERTIES =
+			"/be/condorcet/easycarrent/desktop/config/desktop.properties";
 
 	@Test
 	void mainViewFxmlExistsOnClasspath() {
@@ -69,6 +71,32 @@ class AppResourcesTest {
 		assertTrue(css.contains(".app-root"), "app.css must define .app-root");
 		assertTrue(css.contains(".app-title"), "app.css must define .app-title");
 		assertTrue(css.contains(".app-status"), "app.css must define .app-status");
+	}
+
+	@Test
+	void desktopPropertiesExistsOnClasspath() {
+		assertNotNull(resource(DESKTOP_PROPERTIES),
+				"desktop.properties must exist on the test classpath");
+	}
+
+	@Test
+	void mainViewFxmlContainsBackendStatusLabelId() throws Exception {
+		String fxml = readResource(MAIN_VIEW_FXML);
+		assertTrue(fxml.contains("fx:id=\"backendStatusLabel\""),
+				"main-view.fxml must contain the backendStatusLabel fx:id");
+	}
+
+	@Test
+	void appStylesheetContainsBackendStatusClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		assertTrue(css.contains(".backend-status"),
+				"app.css must define .backend-status");
+		assertTrue(css.contains(".backend-status-pending"),
+				"app.css must define .backend-status-pending");
+		assertTrue(css.contains(".backend-status-connected"),
+				"app.css must define .backend-status-connected");
+		assertTrue(css.contains(".backend-status-unavailable"),
+				"app.css must define .backend-status-unavailable");
 	}
 
 	private static URL resource(String path) {

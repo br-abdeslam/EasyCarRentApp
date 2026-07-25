@@ -82,6 +82,7 @@ class ViewManagerTest {
 		String name = fileName(value);
 		return "section-placeholder.fxml".equals(name)
 				|| "vehicle-categories-view.fxml".equals(name)
-				|| "vehicles-view.fxml".equals(name);
+				|| "vehicles-view.fxml".equals(name)
+				|| "customers-view.fxml".equals(name);
 	}
 }

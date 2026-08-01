@@ -176,4 +176,42 @@ class CustomerMessagesTest {
 		assertTrue(CustomerMessages.backendValidationLines(new CompletionException(
 				new ApiConnectionException("down", new ConnectException()))).isEmpty());
 	}
+
+	// --- save-failure lines (all belong below the form) ------------------------
+
+	@Test
+	void saveFailureLinesAggregateBackendFieldErrorsOnePerLine() {
+		Map<String, String> errors = new LinkedHashMap<>();
+		errors.put("email", "must be a valid email address");
+		errors.put("phone", "must match the accepted phone format");
+
+		List<String> lines = CustomerMessages.saveFailureLines(request(400, errors));
+
+		assertEquals(List.of(
+				"Email: must be a valid email address",
+				"Phone: must match the accepted phone format"), lines);
+	}
+
+	@Test
+	void saveFailureLinesReturnASingleLineForADuplicateConflict() {
+		// A duplicate email/licence 409 has no field validationErrors, but the message
+		// must still render as a single form line below the form, never above the table.
+		List<String> lines = CustomerMessages.saveFailureLines(
+				request(409, "A customer with that email already exists"));
+		assertEquals(List.of("A customer with that email already exists"), lines);
+	}
+
+	@Test
+	void saveFailureLinesReturnASingleLineForAConnectionFailure() {
+		List<String> lines = CustomerMessages.saveFailureLines(new CompletionException(
+				new ApiConnectionException("down", new ConnectException())));
+		assertEquals(List.of(CustomerMessages.CONNECTION_UNAVAILABLE), lines);
+	}
+
+	@Test
+	void saveFailureLinesAreNeverEmpty() {
+		assertFalse(CustomerMessages.saveFailureLines(request(500, "boom")).isEmpty());
+		assertFalse(CustomerMessages.saveFailureLines(request(404, "gone")).isEmpty());
+		assertFalse(CustomerMessages.saveFailureLines(request(403, Map.of())).isEmpty());
+	}
 }

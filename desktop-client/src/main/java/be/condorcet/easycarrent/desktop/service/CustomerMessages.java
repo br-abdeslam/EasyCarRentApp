@@ -107,6 +107,20 @@ public final class CustomerMessages {
 		return UNEXPECTED;
 	}
 
+	/**
+	 * Every create/update failure as a list of lines for the form message area:
+	 * backend field errors (HTTP 400) are aggregated one per line, while any other
+	 * failure (duplicate conflict, not found, connection, unexpected) is a single
+	 * safe line. All belong below the form, never above the table.
+	 */
+	public static List<String> saveFailureLines(Throwable throwable) {
+		List<String> fieldLines = backendValidationLines(throwable);
+		if (!fieldLines.isEmpty()) {
+			return fieldLines;
+		}
+		return List.of(forSaveFailure(throwable));
+	}
+
 	/** Safe message for a failed delete (conflict-aware). */
 	public static String forDeleteFailure(Throwable throwable) {
 		Throwable cause = unwrap(throwable);

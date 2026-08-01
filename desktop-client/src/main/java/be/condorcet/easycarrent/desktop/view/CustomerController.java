@@ -11,7 +11,6 @@ import be.condorcet.easycarrent.desktop.service.CustomerValidator;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -137,6 +136,7 @@ public class CustomerController {
 
 	private CustomerService customerService;
 	private CustomerViewState state;
+	private final CustomerMessageState messages = new CustomerMessageState();
 
 	/** Supplies collaborators after {@code FXMLLoader.load()} and starts loading. */
 	public void init(CustomerService customerService, SessionManager sessionManager) {
@@ -154,7 +154,8 @@ public class CustomerController {
 				});
 
 		refreshControls();
-		loadCustomers();
+		renderMessages();
+		loadCustomersData();
 	}
 
 	private void configureTable() {
@@ -173,19 +174,24 @@ public class CustomerController {
 
 	// --- Loading ---------------------------------------------------------------
 
-	private void loadCustomers() {
+	/**
+	 * Loads the list from the backend. This only touches the list and the general
+	 * status area on failure; it never clears a message the caller has just set (so a
+	 * post-save success message survives the subsequent reload).
+	 */
+	private void loadCustomersData() {
 		if (state.isLoading()) {
 			return;
 		}
 		state.beginLoading();
-		clearStatus();
 		refreshControls();
 
 		customerService.findAll().whenComplete((customers, throwable) ->
 				Platform.runLater(() -> {
 					if (throwable != null) {
 						state.loadFailed();
-						showStatusError(CustomerMessages.forLoadFailure(throwable));
+						messages.statusError(CustomerMessages.forLoadFailure(throwable));
+						renderMessages();
 					} else {
 						state.loadSucceeded(customers);
 						renderCustomers();
@@ -203,7 +209,9 @@ public class CustomerController {
 
 	@FXML
 	private void handleRefresh() {
-		loadCustomers();
+		messages.clearAll();
+		renderMessages();
+		loadCustomersData();
 	}
 
 	// --- Create / edit ---------------------------------------------------------
@@ -215,8 +223,8 @@ public class CustomerController {
 		}
 		formTitleLabel.setText("Add Customer");
 		clearFormFields();
-		clearValidation();
-		clearStatus();
+		messages.clearAll();
+		renderMessages();
 		refreshControls();
 		firstNameField.requestFocus();
 	}
@@ -235,8 +243,8 @@ public class CustomerController {
 		addressArea.setText(selected.address());
 		drivingLicenseField.setText(selected.drivingLicenseNumber());
 		drivingLicenseExpiryPicker.setValue(selected.drivingLicenseExpiryDate());
-		clearValidation();
-		clearStatus();
+		messages.clearAll();
+		renderMessages();
 		refreshControls();
 		firstNameField.requestFocus();
 	}
@@ -244,24 +252,29 @@ public class CustomerController {
 	@FXML
 	private void handleCancel() {
 		state.cancelForm();
-		clearValidation();
+		messages.clearAll();
+		renderMessages();
 		refreshControls();
 	}
 
 	@FXML
 	private void handleSave() {
+		// Every Save attempt starts from a clean slate: no stale form or status message.
+		messages.clearAll();
+		renderMessages();
+
 		CustomerValidator.Result result = CustomerValidator.validate(
 				firstNameField.getText(), lastNameField.getText(), emailField.getText(),
 				phoneField.getText(), addressArea.getText(), drivingLicenseField.getText(),
 				drivingLicenseExpiryPicker.getValue(), LocalDate.now());
 		if (!result.isValid()) {
-			showValidationMessages(CustomerMessages.localValidationLines(result.errors()));
+			messages.formErrors(CustomerMessages.localValidationLines(result.errors()));
+			renderMessages();
 			return;
 		}
 		if (!state.beginOperation()) {
 			return;
 		}
-		clearValidation();
 		refreshControls();
 
 		CustomerRequestDto request = result.request();
@@ -273,23 +286,19 @@ public class CustomerController {
 		future.whenComplete((saved, throwable) -> Platform.runLater(() -> {
 			state.endOperation();
 			if (throwable != null) {
-				List<String> fieldErrors = CustomerMessages.backendValidationLines(throwable);
-				if (fieldErrors.isEmpty()) {
-					clearValidation();
-					showStatusError(CustomerMessages.forSaveFailure(throwable));
-				} else {
-					clearStatus();
-					showValidationMessages(fieldErrors);
-				}
+				// All create/update failures (validation, duplicate conflict, not found,
+				// connection) belong to the form area, never above the table.
+				messages.formErrors(CustomerMessages.saveFailureLines(throwable));
+				renderMessages();
 				refreshControls();
 			} else {
 				state.cancelForm();
-				clearValidation();
-				showStatusSuccess(creating ? "Customer created." : "Customer updated.");
 				if (saved != null) {
 					state.select(saved);
 				}
-				loadCustomers();
+				loadCustomersData();
+				messages.success(creating ? "Customer created." : "Customer updated.");
+				renderMessages();
 			}
 		}));
 	}
@@ -317,19 +326,24 @@ public class CustomerController {
 		if (!state.beginOperation()) {
 			return;
 		}
-		clearStatus();
+		messages.clearAll();
+		renderMessages();
 		refreshControls();
 
 		customerService.delete(customer.id()).whenComplete((ignored, throwable) ->
 				Platform.runLater(() -> {
 					state.endOperation();
 					if (throwable != null) {
-						showStatusError(CustomerMessages.forDeleteFailure(throwable));
+						// A record-level delete conflict (rental reference) belongs above the
+						// table, not in the form validation area.
+						messages.statusError(CustomerMessages.forDeleteFailure(throwable));
+						renderMessages();
 						refreshControls();
 					} else {
 						state.clearSelection();
-						showStatusSuccess("Customer deleted.");
-						loadCustomers();
+						loadCustomersData();
+						messages.success("Customer deleted.");
+						renderMessages();
 					}
 				}));
 	}
@@ -372,42 +386,29 @@ public class CustomerController {
 
 	// --- Messages --------------------------------------------------------------
 
-	private void showStatusSuccess(String message) {
-		statusMessageLabel.setText(message);
-		statusMessageLabel.getStyleClass().setAll(STATUS_BASE, STATUS_SUCCESS);
-		setVisibleManaged(statusMessageLabel, true);
-	}
-
-	private void showStatusError(String message) {
-		statusMessageLabel.setText(message);
-		statusMessageLabel.getStyleClass().setAll(STATUS_BASE, STATUS_ERROR);
-		setVisibleManaged(statusMessageLabel, true);
-	}
-
-	private void clearStatus() {
-		statusMessageLabel.setText("");
-		statusMessageLabel.getStyleClass().setAll(STATUS_BASE);
-		setVisibleManaged(statusMessageLabel, false);
-	}
-
 	/**
-	 * Renders one wrapping label per validation error into the messages container so
-	 * every error is fully readable, and shows the container. An empty list hides it.
+	 * Mirrors the {@link CustomerMessageState} onto the two message areas: one
+	 * wrapping label per form error below the form (never truncated), and the general
+	 * status message above the table. Because the model keeps the two areas mutually
+	 * exclusive, the same failure is never shown in both places.
 	 */
-	private void showValidationMessages(List<String> messages) {
+	private void renderMessages() {
 		validationMessagesContainer.getChildren().clear();
-		for (String message : messages) {
-			Label label = new Label(message);
+		for (String line : messages.formMessages()) {
+			Label label = new Label(line);
 			label.setWrapText(true);
 			label.setMaxWidth(Double.MAX_VALUE);
 			label.getStyleClass().add("customer-validation-message");
 			validationMessagesContainer.getChildren().add(label);
 		}
-		setVisibleManaged(validationMessagesContainer, !messages.isEmpty());
-	}
+		setVisibleManaged(validationMessagesContainer, messages.hasFormMessages());
 
-	private void clearValidation() {
-		validationMessagesContainer.getChildren().clear();
-		setVisibleManaged(validationMessagesContainer, false);
+		statusMessageLabel.setText(messages.statusMessage());
+		switch (messages.statusKind()) {
+			case SUCCESS -> statusMessageLabel.getStyleClass().setAll(STATUS_BASE, STATUS_SUCCESS);
+			case ERROR -> statusMessageLabel.getStyleClass().setAll(STATUS_BASE, STATUS_ERROR);
+			case NONE -> statusMessageLabel.getStyleClass().setAll(STATUS_BASE);
+		}
+		setVisibleManaged(statusMessageLabel, messages.hasStatusMessage());
 	}
 }

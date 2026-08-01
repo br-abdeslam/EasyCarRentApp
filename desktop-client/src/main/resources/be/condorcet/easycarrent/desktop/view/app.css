@@ -503,6 +503,10 @@
 	-fx-font-size: 13px;
 }
 
+.customer-validation-messages {
+	-fx-spacing: 4;
+}
+
 .customer-validation-message {
 	-fx-font-size: 12px;
 	-fx-text-fill: #8a1c1c;

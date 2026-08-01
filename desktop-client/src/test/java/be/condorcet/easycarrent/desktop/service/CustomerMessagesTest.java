@@ -136,4 +136,44 @@ class CustomerMessagesTest {
 		assertFalse(message.contains("@"), "no submitted email value");
 		assertTrue(message.contains("Email:"), "uses a readable field label");
 	}
+
+	// --- line-list rendering model ---------------------------------------------
+
+	@Test
+	void localValidationLinesReturnEachErrorSeparatelyPreservingOrder() {
+		List<String> lines = CustomerMessages.localValidationLines(List.of(
+				"Email must be a valid email address.",
+				"Phone must contain digits and may include spaces, parentheses, "
+						+ "hyphens and an optional leading +."));
+		assertEquals(2, lines.size());
+		assertTrue(lines.get(0).contains("Email"));
+		assertTrue(lines.get(1).contains("Phone"));
+	}
+
+	@Test
+	void localValidationLinesRemoveDuplicates() {
+		assertEquals(List.of("Address is required."),
+				CustomerMessages.localValidationLines(
+						List.of("Address is required.", "Address is required.")));
+	}
+
+	@Test
+	void backendValidationLinesReturnOneEntryPerFieldForValidationFailure() {
+		Map<String, String> errors = new LinkedHashMap<>();
+		errors.put("email", "must be a valid email address");
+		errors.put("firstName", "is required");
+
+		List<String> lines = CustomerMessages.backendValidationLines(request(400, errors));
+
+		assertEquals(List.of("First name: is required", "Email: must be a valid email address"),
+				lines);
+	}
+
+	@Test
+	void backendValidationLinesAreEmptyForNonValidationFailures() {
+		assertTrue(CustomerMessages.backendValidationLines(request(409, "conflict")).isEmpty());
+		assertTrue(CustomerMessages.backendValidationLines(request(403, Map.of())).isEmpty());
+		assertTrue(CustomerMessages.backendValidationLines(new CompletionException(
+				new ApiConnectionException("down", new ConnectException()))).isEmpty());
+	}
 }

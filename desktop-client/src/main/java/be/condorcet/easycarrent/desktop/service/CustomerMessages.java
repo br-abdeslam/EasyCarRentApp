@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 
 /**
  * JavaFX-free formatting of safe, user-facing messages for the Customers screen.
@@ -54,7 +53,34 @@ public final class CustomerMessages {
 	 * and removing exact duplicates.
 	 */
 	public static String localValidation(List<String> errors) {
-		return errors.stream().distinct().collect(Collectors.joining("\n"));
+		return String.join("\n", localValidationLines(errors));
+	}
+
+	/**
+	 * Local validation errors as a list of individual display lines, preserving the
+	 * validator's order and removing exact duplicates. Each entry is rendered as its
+	 * own visible label so every error stays fully readable.
+	 */
+	public static List<String> localValidationLines(List<String> errors) {
+		return errors.stream().distinct().toList();
+	}
+
+	/**
+	 * The field-validation lines to display for a failed save, or an empty list when
+	 * the failure is not a backend field-validation error (those general failures use
+	 * the status message instead).
+	 */
+	public static List<String> backendValidationLines(Throwable throwable) {
+		Throwable cause = unwrap(throwable);
+		if (cause instanceof ApiRequestException request
+				&& request.status() == HttpURLConnection.HTTP_BAD_REQUEST
+				&& request.apiError().isPresent()) {
+			ApiErrorDto error = request.apiError().get();
+			if (error.validationErrors() != null && !error.validationErrors().isEmpty()) {
+				return backendValidationLines(error);
+			}
+		}
+		return List.of();
 	}
 
 	/** Safe message for a failed list/load. */
@@ -108,6 +134,19 @@ public final class CustomerMessages {
 					? REQUEST_INVALID
 					: error.message();
 		}
+		return String.join("\n", backendValidationLines(error));
+	}
+
+	/**
+	 * Backend {@code validationErrors} as a list of one readable line per field, in
+	 * a deterministic canonical order (unknown fields sorted after), with duplicates
+	 * removed.
+	 */
+	public static List<String> backendValidationLines(ApiErrorDto error) {
+		Map<String, String> fieldErrors = error.validationErrors();
+		if (fieldErrors == null || fieldErrors.isEmpty()) {
+			return List.of();
+		}
 		List<String> lines = new ArrayList<>();
 		for (String field : FIELD_ORDER) {
 			if (fieldErrors.containsKey(field)) {
@@ -118,7 +157,7 @@ public final class CustomerMessages {
 				.filter(entry -> !FIELD_ORDER.contains(entry.getKey()))
 				.sorted(Map.Entry.comparingByKey())
 				.forEach(entry -> lines.add(line(entry.getKey(), entry.getValue())));
-		return lines.stream().distinct().collect(Collectors.joining("\n"));
+		return lines.stream().distinct().toList();
 	}
 
 	private static String generalRequest(ApiRequestException request) {

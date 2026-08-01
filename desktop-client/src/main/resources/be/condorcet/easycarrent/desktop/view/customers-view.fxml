@@ -122,8 +122,8 @@
 						<DatePicker fx:id="drivingLicenseExpiryPicker" styleClass="customer-form-field"/>
 					</children>
 				</HBox>
-				<Label fx:id="validationMessageLabel" wrapText="true"
-					visible="false" managed="false" styleClass="customer-validation-message"/>
+				<VBox fx:id="validationMessagesContainer" spacing="4.0"
+					visible="false" managed="false" styleClass="customer-validation-messages"/>
 				<HBox spacing="10.0">
 					<children>
 						<Button fx:id="saveButton" text="Save" onAction="#handleSave"

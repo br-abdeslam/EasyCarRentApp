@@ -11,6 +11,7 @@ import be.condorcet.easycarrent.desktop.service.CustomerValidator;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -126,7 +127,7 @@ public class CustomerController {
 	private DatePicker drivingLicenseExpiryPicker;
 
 	@FXML
-	private Label validationMessageLabel;
+	private VBox validationMessagesContainer;
 
 	@FXML
 	private Button saveButton;
@@ -254,7 +255,7 @@ public class CustomerController {
 				phoneField.getText(), addressArea.getText(), drivingLicenseField.getText(),
 				drivingLicenseExpiryPicker.getValue(), LocalDate.now());
 		if (!result.isValid()) {
-			showValidation(CustomerMessages.localValidation(result.errors()));
+			showValidationMessages(CustomerMessages.localValidationLines(result.errors()));
 			return;
 		}
 		if (!state.beginOperation()) {
@@ -272,7 +273,14 @@ public class CustomerController {
 		future.whenComplete((saved, throwable) -> Platform.runLater(() -> {
 			state.endOperation();
 			if (throwable != null) {
-				showValidation(CustomerMessages.forSaveFailure(throwable));
+				List<String> fieldErrors = CustomerMessages.backendValidationLines(throwable);
+				if (fieldErrors.isEmpty()) {
+					clearValidation();
+					showStatusError(CustomerMessages.forSaveFailure(throwable));
+				} else {
+					clearStatus();
+					showValidationMessages(fieldErrors);
+				}
 				refreshControls();
 			} else {
 				state.cancelForm();
@@ -382,13 +390,24 @@ public class CustomerController {
 		setVisibleManaged(statusMessageLabel, false);
 	}
 
-	private void showValidation(String message) {
-		validationMessageLabel.setText(message);
-		setVisibleManaged(validationMessageLabel, true);
+	/**
+	 * Renders one wrapping label per validation error into the messages container so
+	 * every error is fully readable, and shows the container. An empty list hides it.
+	 */
+	private void showValidationMessages(List<String> messages) {
+		validationMessagesContainer.getChildren().clear();
+		for (String message : messages) {
+			Label label = new Label(message);
+			label.setWrapText(true);
+			label.setMaxWidth(Double.MAX_VALUE);
+			label.getStyleClass().add("customer-validation-message");
+			validationMessagesContainer.getChildren().add(label);
+		}
+		setVisibleManaged(validationMessagesContainer, !messages.isEmpty());
 	}
 
 	private void clearValidation() {
-		validationMessageLabel.setText("");
-		setVisibleManaged(validationMessageLabel, false);
+		validationMessagesContainer.getChildren().clear();
+		setVisibleManaged(validationMessagesContainer, false);
 	}
 }

@@ -153,6 +153,34 @@ class CustomerValidatorTest {
 	}
 
 	@Test
+	void reportedEmailAndPhoneScenarioReturnsBothErrorsWithEmailFirst() {
+		// Exact reproduction: only email and phone are invalid; all other fields valid.
+		CustomerValidator.Result result = validate("Test", "Customer", "gmail.com",
+				"+32 455 5A55 55", "Fictional test address", "TEST-LICENCE-001", FUTURE);
+
+		List<String> errors = result.errors();
+		assertEquals(2, errors.size(), "both the email and phone errors must be reported");
+		int emailIndex = indexOfContaining(errors, "email");
+		int phoneIndex = indexOfContaining(errors, "phone");
+		assertTrue(emailIndex >= 0, "an email error must be present");
+		assertTrue(phoneIndex >= 0, "a phone error must be present");
+		assertTrue(emailIndex < phoneIndex, "the email error must appear before the phone error");
+
+		String joined = be.condorcet.easycarrent.desktop.service.CustomerMessages
+				.localValidation(errors);
+		assertTrue(joined.contains("\n"), "the two messages must be separated by a newline");
+	}
+
+	private static int indexOfContaining(List<String> errors, String needle) {
+		for (int i = 0; i < errors.size(); i++) {
+			if (errors.get(i).toLowerCase().contains(needle)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	@Test
 	void messagesDoNotIncludeSubmittedValues() {
 		List<String> errors = validate("First", "Last", "not-an-email",
 				"+3212345678901234567890", "1 Example Street", "TEST-LICENCE-001", TODAY.minusDays(1))

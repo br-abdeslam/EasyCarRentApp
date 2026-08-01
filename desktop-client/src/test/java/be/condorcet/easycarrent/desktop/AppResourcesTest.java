@@ -239,10 +239,22 @@ class AppResourcesTest {
 	}
 
 	@Test
-	void customersValidationAndStatusLabelsWrap() throws Exception {
-		assertTrue(lineContaining(CUSTOMERS_FXML, "fx:id=\"validationMessageLabel\"")
-				.contains("wrapText=\"true\""),
-				"the validation label must wrap so multiple errors are readable");
+	void customersUseAnExpandableValidationMessagesContainer() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		String containerLine =
+				lineContaining(CUSTOMERS_FXML, "fx:id=\"validationMessagesContainer\"");
+		assertTrue(containerLine.contains("<VBox"),
+				"validation errors must render in an expandable VBox container");
+		assertFalse(containerLine.contains("prefHeight") || containerLine.contains("maxHeight"),
+				"the validation container must not have a fixed height");
+		assertFalse(fxml.contains("fx:id=\"validationMessageLabel\""),
+				"the obsolete single-line validation label must be removed");
+		assertFalse(fxml.contains("textOverrun"),
+				"customers-view.fxml must not force ellipsis truncation");
+	}
+
+	@Test
+	void customersStatusLabelWraps() throws Exception {
 		assertTrue(lineContaining(CUSTOMERS_FXML, "fx:id=\"statusMessageLabel\"")
 				.contains("wrapText=\"true\""),
 				"the status label must wrap so long messages are readable");
@@ -291,7 +303,8 @@ class AppResourcesTest {
 				".customer-view", ".customer-header", ".customer-toolbar", ".customer-table",
 				".customer-empty-state", ".customer-loading", ".customer-status",
 				".customer-status-success", ".customer-status-error", ".customer-editor",
-				".customer-editor-title", ".customer-form-field", ".customer-validation-message"}) {
+				".customer-editor-title", ".customer-form-field", ".customer-validation-message",
+				".customer-validation-messages"}) {
 			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
 		}
 	}

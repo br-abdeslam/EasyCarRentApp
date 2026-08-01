@@ -30,6 +30,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/vehicle-categories-view.fxml";
 	private static final String VEHICLES_FXML =
 			"/be/condorcet/easycarrent/desktop/view/vehicles-view.fxml";
+	private static final String CUSTOMERS_FXML =
+			"/be/condorcet/easycarrent/desktop/view/customers-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -195,6 +197,116 @@ class AppResourcesTest {
 				"vehicle-categories-view.fxml must not use inline style attributes");
 		assertFalse(readResource(VEHICLES_FXML).contains("style=\""),
 				"vehicles-view.fxml must not use inline style attributes");
+		assertFalse(readResource(CUSTOMERS_FXML).contains("style=\""),
+				"customers-view.fxml must not use inline style attributes");
+	}
+
+	@Test
+	void customersFxmlExistsAndIsWellFormed() throws Exception {
+		assertNotNull(resource(CUSTOMERS_FXML),
+				"customers-view.fxml must exist on the test classpath");
+		try (InputStream in = stream(CUSTOMERS_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"customers-view.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void customersFxmlDeclaresController() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.CustomerController\""),
+				"customers-view.fxml must declare CustomerController");
+	}
+
+	@Test
+	void customersFxmlContainsTableAndColumns() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		assertTrue(fxml.contains("fx:id=\"customerTable\""), "customerTable required");
+		for (String column : new String[] {"idColumn", "firstNameColumn", "lastNameColumn",
+				"emailColumn", "phoneColumn", "drivingLicenseColumn", "drivingLicenseExpiryColumn"}) {
+			assertTrue(fxml.contains("fx:id=\"" + column + "\""), column + " required");
+		}
+	}
+
+	@Test
+	void customersFxmlExpiryColumnHasReadableHeading() throws Exception {
+		String expiryLine = lineContaining(CUSTOMERS_FXML, "fx:id=\"drivingLicenseExpiryColumn\"");
+		assertTrue(expiryLine.contains("text=\"Licence expiry\""),
+				"the licence-expiry column must have a readable heading");
+	}
+
+	@Test
+	void customersUseAnExpandableValidationMessagesContainer() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		String containerLine =
+				lineContaining(CUSTOMERS_FXML, "fx:id=\"validationMessagesContainer\"");
+		assertTrue(containerLine.contains("<VBox"),
+				"validation errors must render in an expandable VBox container");
+		assertFalse(containerLine.contains("prefHeight") || containerLine.contains("maxHeight"),
+				"the validation container must not have a fixed height");
+		assertFalse(fxml.contains("fx:id=\"validationMessageLabel\""),
+				"the obsolete single-line validation label must be removed");
+		assertFalse(fxml.contains("textOverrun"),
+				"customers-view.fxml must not force ellipsis truncation");
+	}
+
+	@Test
+	void customersStatusLabelWraps() throws Exception {
+		assertTrue(lineContaining(CUSTOMERS_FXML, "fx:id=\"statusMessageLabel\"")
+				.contains("wrapText=\"true\""),
+				"the status label must wrap so long messages are readable");
+	}
+
+	@Test
+	void customersFxmlContainsActionControls() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		for (String id : new String[] {"refreshButton", "addButton", "editButton", "deleteButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void customersFxmlContainsStateControls() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		for (String id : new String[] {"loadingIndicator", "statusMessageLabel", "emptyStateLabel",
+				"readOnlyNoticeLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void customersFxmlContainsFormControls() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		for (String id : new String[] {"firstNameField", "lastNameField", "emailField", "phoneField",
+				"addressArea", "drivingLicenseField", "drivingLicenseExpiryPicker", "saveButton",
+				"cancelButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void customersFxmlHasNoPasswordFieldOrStaticData() throws Exception {
+		String fxml = readResource(CUSTOMERS_FXML);
+		assertFalse(fxml.contains("<PasswordField"),
+				"customers-view.fxml must not contain a password field");
+		assertFalse(fxml.contains("<items>"),
+				"the customer table must not define hardcoded rows");
+	}
+
+	@Test
+	void appStylesheetContainsCustomerClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		for (String cssClass : new String[] {
+				".customer-view", ".customer-header", ".customer-toolbar", ".customer-table",
+				".customer-empty-state", ".customer-loading", ".customer-status",
+				".customer-status-success", ".customer-status-error", ".customer-editor",
+				".customer-editor-title", ".customer-form-field", ".customer-validation-message",
+				".customer-validation-messages"}) {
+			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
+		}
 	}
 
 	@Test

@@ -333,4 +333,22 @@ class ApiClientTest {
 		assertTrue(http.lastRequestBody().contains("\"categoryId\":3"));
 		assertFalse(http.lastRequestBody().contains("\"status\""));
 	}
+
+	@Test
+	void customerCreateRoundTripsLocalDate() {
+		RecordingHttpClient http = RecordingHttpClient.returning(new FakeHttpResponse(201,
+				"{\"id\":9,\"firstName\":\"Test\",\"lastName\":\"Customer\","
+						+ "\"email\":\"test.customer@example.invalid\",\"phone\":\"+0000000000\","
+						+ "\"address\":\"x\",\"drivingLicenseNumber\":\"L\","
+						+ "\"drivingLicenseExpiryDate\":\"2030-01-15\"}"));
+		var request = new be.condorcet.easycarrent.desktop.dto.CustomerRequestDto(
+				"Test", "Customer", "test.customer@example.invalid", "+0000000000", "x", "L",
+				java.time.LocalDate.of(2030, 1, 15));
+
+		var created = client(http).postJson("/api/customers", request,
+				be.condorcet.easycarrent.desktop.dto.CustomerResponseDto.class, testCredentials()).join();
+
+		assertTrue(http.lastRequestBody().contains("\"drivingLicenseExpiryDate\":\"2030-01-15\""));
+		assertEquals(java.time.LocalDate.of(2030, 1, 15), created.drivingLicenseExpiryDate());
+	}
 }

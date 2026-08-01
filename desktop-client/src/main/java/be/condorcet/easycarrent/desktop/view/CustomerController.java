@@ -2,21 +2,17 @@ package be.condorcet.easycarrent.desktop.view;
 
 import be.condorcet.easycarrent.desktop.auth.CustomerPermissions;
 import be.condorcet.easycarrent.desktop.auth.DesktopUserRole;
-import be.condorcet.easycarrent.desktop.dto.ApiErrorDto;
 import be.condorcet.easycarrent.desktop.dto.CustomerRequestDto;
 import be.condorcet.easycarrent.desktop.dto.CustomerResponseDto;
-import be.condorcet.easycarrent.desktop.http.ApiConnectionException;
-import be.condorcet.easycarrent.desktop.http.ApiRequestException;
+import be.condorcet.easycarrent.desktop.service.CustomerDateFormatter;
+import be.condorcet.easycarrent.desktop.service.CustomerMessages;
 import be.condorcet.easycarrent.desktop.service.CustomerService;
 import be.condorcet.easycarrent.desktop.service.CustomerValidator;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 
-import java.net.HttpURLConnection;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
@@ -74,6 +70,9 @@ public class CustomerController {
 
 	@FXML
 	private TableColumn<CustomerResponseDto, String> drivingLicenseColumn;
+
+	@FXML
+	private TableColumn<CustomerResponseDto, String> drivingLicenseExpiryColumn;
 
 	@FXML
 	private Button refreshButton;
@@ -167,6 +166,8 @@ public class CustomerController {
 		phoneColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().phone()));
 		drivingLicenseColumn.setCellValueFactory(
 				cell -> new SimpleStringProperty(cell.getValue().drivingLicenseNumber()));
+		drivingLicenseExpiryColumn.setCellValueFactory(cell -> new SimpleStringProperty(
+				CustomerDateFormatter.formatExpiry(cell.getValue().drivingLicenseExpiryDate())));
 	}
 
 	// --- Loading ---------------------------------------------------------------
@@ -183,7 +184,7 @@ public class CustomerController {
 				Platform.runLater(() -> {
 					if (throwable != null) {
 						state.loadFailed();
-						showStatusError(safeMessage(throwable));
+						showStatusError(CustomerMessages.forLoadFailure(throwable));
 					} else {
 						state.loadSucceeded(customers);
 						renderCustomers();
@@ -253,7 +254,7 @@ public class CustomerController {
 				phoneField.getText(), addressArea.getText(), drivingLicenseField.getText(),
 				drivingLicenseExpiryPicker.getValue(), LocalDate.now());
 		if (!result.isValid()) {
-			showValidation(String.join("\n", result.errors()));
+			showValidation(CustomerMessages.localValidation(result.errors()));
 			return;
 		}
 		if (!state.beginOperation()) {
@@ -271,7 +272,7 @@ public class CustomerController {
 		future.whenComplete((saved, throwable) -> Platform.runLater(() -> {
 			state.endOperation();
 			if (throwable != null) {
-				showValidation(safeMessage(throwable));
+				showValidation(CustomerMessages.forSaveFailure(throwable));
 				refreshControls();
 			} else {
 				state.cancelForm();
@@ -315,7 +316,7 @@ public class CustomerController {
 				Platform.runLater(() -> {
 					state.endOperation();
 					if (throwable != null) {
-						showStatusError(safeMessage(throwable));
+						showStatusError(CustomerMessages.forDeleteFailure(throwable));
 						refreshControls();
 					} else {
 						state.clearSelection();
@@ -389,57 +390,5 @@ public class CustomerController {
 	private void clearValidation() {
 		validationMessageLabel.setText("");
 		setVisibleManaged(validationMessageLabel, false);
-	}
-
-	private String safeMessage(Throwable throwable) {
-		Throwable cause = unwrap(throwable);
-		if (cause instanceof ApiConnectionException) {
-			return "The backend is unavailable. Please try again.";
-		}
-		if (cause instanceof ApiRequestException request) {
-			return safeRequestMessage(request);
-		}
-		return "An unexpected error occurred.";
-	}
-
-	private String safeRequestMessage(ApiRequestException request) {
-		int status = request.status();
-		if (status == HttpURLConnection.HTTP_BAD_REQUEST) {
-			return request.apiError()
-					.map(this::formatValidationErrors)
-					.orElse("The request was invalid.");
-		}
-		if (status == HttpURLConnection.HTTP_UNAUTHORIZED
-				|| status == HttpURLConnection.HTTP_FORBIDDEN) {
-			return "You are not authorized to perform this action.";
-		}
-		if (status == HttpURLConnection.HTTP_NOT_FOUND) {
-			return "The customer no longer exists. Please refresh.";
-		}
-		if (status == HttpURLConnection.HTTP_CONFLICT) {
-			return request.apiError()
-					.map(ApiErrorDto::message)
-					.filter(message -> message != null && !message.isBlank())
-					.orElse("The request conflicts with existing data.");
-		}
-		return "Unexpected response from the backend (status " + status + ").";
-	}
-
-	private String formatValidationErrors(ApiErrorDto error) {
-		if (error.validationErrors() != null && !error.validationErrors().isEmpty()) {
-			return error.validationErrors().entrySet().stream()
-					.map(entry -> entry.getKey() + ": " + entry.getValue())
-					.collect(Collectors.joining("\n"));
-		}
-		return error.message() == null || error.message().isBlank()
-				? "The request was invalid."
-				: error.message();
-	}
-
-	private static Throwable unwrap(Throwable throwable) {
-		if (throwable instanceof CompletionException && throwable.getCause() != null) {
-			return throwable.getCause();
-		}
-		return throwable;
 	}
 }

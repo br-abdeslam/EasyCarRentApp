@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import be.condorcet.easycarrent.desktop.dto.CustomerRequestDto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -89,5 +90,77 @@ class CustomerValidatorTest {
 	@Test
 	void acceptsTodayAsExpiryDate() {
 		assertTrue(validate("F", "L", "a@b.invalid", "000000", "addr", "L", TODAY).isValid());
+	}
+
+	// --- aggregation regression ------------------------------------------------
+
+	@Test
+	void doesNotStopAtTheFirstInvalidField() {
+		List<String> errors = validate("", "", "bad", "12ab", "", "", TODAY.minusDays(1)).errors();
+		assertTrue(errors.size() > 1, "validation must not stop after the first error");
+	}
+
+	@Test
+	void reportsFirstNameAndEmailErrorsTogether() {
+		List<String> errors = validate("", "Last", "bad-email", "000000", "addr", "L", FUTURE).errors();
+		assertTrue(errors.stream().anyMatch(e -> e.toLowerCase().contains("first name")));
+		assertTrue(errors.stream().anyMatch(e -> e.toLowerCase().contains("email")));
+	}
+
+	@Test
+	void reportsPhoneAndExpiryErrorsTogether() {
+		List<String> errors =
+				validate("First", "Last", "a@b.invalid", "12ab", "addr", "L", TODAY.minusDays(1))
+						.errors();
+		assertTrue(errors.stream().anyMatch(e -> e.toLowerCase().contains("phone")));
+		assertTrue(errors.stream().anyMatch(e -> e.toLowerCase().contains("expiry")));
+	}
+
+	@Test
+	void reportsEverySevenFieldsInOneDeterministicPass() {
+		List<String> errors = validate("", "", "bad-email", "12ab", "", "", TODAY.minusDays(1))
+				.errors();
+
+		assertEquals(7, errors.size());
+		// Deterministic field order: first, last, email, phone, address, licence, expiry.
+		assertTrue(errors.get(0).toLowerCase().contains("first name"));
+		assertTrue(errors.get(1).toLowerCase().contains("last name"));
+		assertTrue(errors.get(2).toLowerCase().contains("email"));
+		assertTrue(errors.get(3).toLowerCase().contains("phone"));
+		assertTrue(errors.get(4).toLowerCase().contains("address"));
+		assertTrue(errors.get(5).toLowerCase().contains("licence"));
+		assertTrue(errors.get(6).toLowerCase().contains("expiry"));
+	}
+
+	@Test
+	void returnsNoDuplicateMessages() {
+		List<String> errors = validate("", "", "bad-email", "12ab", "", "", TODAY.minusDays(1))
+				.errors();
+		assertEquals(errors.size(), errors.stream().distinct().count());
+	}
+
+	@Test
+	void correctingOneFieldKeepsTheRemainingErrors() {
+		List<String> allInvalid = validate("", "", "bad-email", "12ab", "", "", TODAY.minusDays(1))
+				.errors();
+		List<String> firstNameFixed =
+				validate("First", "", "bad-email", "12ab", "", "", TODAY.minusDays(1)).errors();
+
+		assertEquals(allInvalid.size() - 1, firstNameFixed.size());
+		assertFalse(firstNameFixed.stream().anyMatch(e -> e.toLowerCase().contains("first name")));
+		assertTrue(firstNameFixed.stream().anyMatch(e -> e.toLowerCase().contains("email")));
+		assertTrue(firstNameFixed.stream().anyMatch(e -> e.toLowerCase().contains("expiry")));
+	}
+
+	@Test
+	void messagesDoNotIncludeSubmittedValues() {
+		List<String> errors = validate("First", "Last", "not-an-email",
+				"+3212345678901234567890", "1 Example Street", "TEST-LICENCE-001", TODAY.minusDays(1))
+				.errors();
+		for (String message : errors) {
+			assertFalse(message.contains("not-an-email"), "must not echo the submitted email");
+			assertFalse(message.contains("1 Example Street"), "must not echo the submitted address");
+			assertFalse(message.contains("TEST-LICENCE-001"), "must not echo the submitted licence");
+		}
 	}
 }

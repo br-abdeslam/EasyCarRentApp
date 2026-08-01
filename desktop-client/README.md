@@ -42,7 +42,8 @@ inside the central content area (header and sidebar stay visible).
 
 - **Loading, empty, and error states** — customers load asynchronously (the
   JavaFX Application Thread is never blocked); the table shows the real backend
-  data (id, first name, last name, email, phone, licence number). An empty list
+  data (id, first name, last name, email, phone, licence number, licence expiry).
+  An empty list
   and API/connection failures are shown with a safe message and no stack traces.
 - **Refresh** — reloads the current backend state; only one load runs at a time.
 - **Role-aware writes** — reading is available to USER and ADMIN. Per the backend

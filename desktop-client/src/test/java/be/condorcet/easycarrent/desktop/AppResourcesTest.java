@@ -226,9 +226,26 @@ class AppResourcesTest {
 		String fxml = readResource(CUSTOMERS_FXML);
 		assertTrue(fxml.contains("fx:id=\"customerTable\""), "customerTable required");
 		for (String column : new String[] {"idColumn", "firstNameColumn", "lastNameColumn",
-				"emailColumn", "phoneColumn", "drivingLicenseColumn"}) {
+				"emailColumn", "phoneColumn", "drivingLicenseColumn", "drivingLicenseExpiryColumn"}) {
 			assertTrue(fxml.contains("fx:id=\"" + column + "\""), column + " required");
 		}
+	}
+
+	@Test
+	void customersFxmlExpiryColumnHasReadableHeading() throws Exception {
+		String expiryLine = lineContaining(CUSTOMERS_FXML, "fx:id=\"drivingLicenseExpiryColumn\"");
+		assertTrue(expiryLine.contains("text=\"Licence expiry\""),
+				"the licence-expiry column must have a readable heading");
+	}
+
+	@Test
+	void customersValidationAndStatusLabelsWrap() throws Exception {
+		assertTrue(lineContaining(CUSTOMERS_FXML, "fx:id=\"validationMessageLabel\"")
+				.contains("wrapText=\"true\""),
+				"the validation label must wrap so multiple errors are readable");
+		assertTrue(lineContaining(CUSTOMERS_FXML, "fx:id=\"statusMessageLabel\"")
+				.contains("wrapText=\"true\""),
+				"the status label must wrap so long messages are readable");
 	}
 
 	@Test

@@ -2,6 +2,7 @@ package be.condorcet.easycarrent.desktop.view;
 
 import be.condorcet.easycarrent.desktop.service.AuthenticationService;
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.RentalService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.service.VehicleService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
@@ -42,10 +43,12 @@ public final class ViewManager {
 	private final VehicleCategoryService vehicleCategoryService;
 	private final VehicleService vehicleService;
 	private final CustomerService customerService;
+	private final RentalService rentalService;
 
 	public ViewManager(Stage stage, AuthenticationService authenticationService,
 			SessionManager sessionManager, VehicleCategoryService vehicleCategoryService,
-			VehicleService vehicleService, CustomerService customerService) {
+			VehicleService vehicleService, CustomerService customerService,
+			RentalService rentalService) {
 		this.stage = Objects.requireNonNull(stage, "stage");
 		this.authenticationService =
 				Objects.requireNonNull(authenticationService, "authenticationService");
@@ -54,6 +57,7 @@ public final class ViewManager {
 				Objects.requireNonNull(vehicleCategoryService, "vehicleCategoryService");
 		this.vehicleService = Objects.requireNonNull(vehicleService, "vehicleService");
 		this.customerService = Objects.requireNonNull(customerService, "customerService");
+		this.rentalService = Objects.requireNonNull(rentalService, "rentalService");
 	}
 
 	/** Builds the primary scene showing the login view and displays the stage. */
@@ -87,7 +91,8 @@ public final class ViewManager {
 		FXMLLoader loader = new FXMLLoader(requireResource(ViewManager.MAIN_FXML));
 		Parent root = load(loader);
 		MainViewController controller = loader.getController();
-		controller.init(sessionManager, this, vehicleCategoryService, vehicleService, customerService);
+		controller.init(sessionManager, this, vehicleCategoryService, vehicleService, customerService,
+				rentalService);
 		return root;
 	}
 

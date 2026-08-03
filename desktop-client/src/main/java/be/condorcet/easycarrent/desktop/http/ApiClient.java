@@ -161,6 +161,19 @@ public final class ApiClient {
 	}
 
 	/**
+	 * Performs an asynchronous authenticated {@code PATCH} with no request body and a
+	 * typed JSON response. Used for backend lifecycle transitions that take no body
+	 * (for example a rental's start, complete, and cancel endpoints).
+	 */
+	public <T> CompletableFuture<T> patchJson(String path, Class<T> responseType,
+			BasicCredentials credentials) {
+		Objects.requireNonNull(responseType, "responseType");
+		Objects.requireNonNull(credentials, "credentials");
+		HttpRequest request = jsonRequest("PATCH", path, null, credentials);
+		return send(request).thenApply(response -> readJsonBody(path, response, responseType));
+	}
+
+	/**
 	 * Performs an asynchronous authenticated {@code DELETE}. Any 2xx (including 204)
 	 * completes successfully; non-2xx becomes an {@link ApiRequestException}.
 	 */

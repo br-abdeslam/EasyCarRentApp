@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+	xmlns:fx="http://javafx.com/fxml"
+	fx:controller="be.condorcet.easycarrent.desktop.view.RentalController"
+	spacing="14.0" styleClass="rental-view">
+	<padding>
+		<Insets top="20.0" right="24.0" bottom="20.0" left="24.0"/>
+	</padding>
+	<children>
+		<HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="rental-header">
+			<children>
+				<VBox spacing="2.0">
+					<children>
+						<Label text="Rentals" styleClass="rental-editor-title"/>
+						<Label text="Book vehicles for customers and manage each rental's lifecycle."
+							styleClass="rental-status-message"/>
+					</children>
+				</VBox>
+				<Region HBox.hgrow="ALWAYS"/>
+				<Label fx:id="readOnlyNoticeLabel"
+					text="Read-only: your role cannot modify rentals."
+					visible="false" managed="false" styleClass="read-only-notice"/>
+				<ProgressIndicator fx:id="loadingIndicator" maxWidth="26.0" maxHeight="26.0"
+					visible="false" styleClass="rental-loading"/>
+			</children>
+		</HBox>
+
+		<HBox spacing="10.0" styleClass="rental-toolbar">
+			<children>
+				<Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh"
+					styleClass="secondary-button"/>
+				<Button fx:id="addButton" text="Add Rental" onAction="#handleAdd"
+					styleClass="primary-button"/>
+				<Button fx:id="editButton" text="Edit" onAction="#handleEdit"
+					styleClass="secondary-button"/>
+				<Button fx:id="startRentalButton" text="Start" onAction="#handleStart"
+					styleClass="secondary-button"/>
+				<Button fx:id="completeRentalButton" text="Complete" onAction="#handleComplete"
+					styleClass="secondary-button"/>
+				<Button fx:id="cancelRentalButton" text="Cancel rental" onAction="#handleCancelRental"
+					styleClass="secondary-button"/>
+				<Button fx:id="deleteButton" text="Delete" onAction="#handleDelete"
+					styleClass="danger-button"/>
+			</children>
+		</HBox>
+
+		<Label fx:id="statusMessageLabel" wrapText="true" visible="false" managed="false"
+			styleClass="rental-status-message"/>
+
+		<TableView fx:id="rentalTable" VBox.vgrow="ALWAYS" styleClass="rental-table">
+			<columns>
+				<TableColumn fx:id="idColumn" text="ID" prefWidth="55.0"/>
+				<TableColumn fx:id="customerColumn" text="Customer" prefWidth="150.0"/>
+				<TableColumn fx:id="vehicleColumn" text="Vehicle" prefWidth="200.0"/>
+				<TableColumn fx:id="startDateColumn" text="Start date" prefWidth="100.0"/>
+				<TableColumn fx:id="endDateColumn" text="End date" prefWidth="100.0"/>
+				<TableColumn fx:id="statusColumn" text="Status" prefWidth="100.0"/>
+				<TableColumn fx:id="totalPriceColumn" text="Total price" prefWidth="100.0"
+					styleClass="rental-price-column"/>
+			</columns>
+		</TableView>
+
+		<Label fx:id="emptyStateLabel" text="No rentals yet."
+			visible="false" managed="false" styleClass="rental-empty-state"/>
+
+		<VBox fx:id="rentalEditor" spacing="10.0" visible="false" managed="false"
+			styleClass="rental-editor">
+			<children>
+				<Label fx:id="formTitleLabel" text="Add Rental" styleClass="rental-editor-title"/>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Customer" minWidth="130.0" styleClass="form-label"/>
+						<ComboBox fx:id="customerComboBox" HBox.hgrow="ALWAYS"
+							styleClass="rental-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Vehicle" minWidth="130.0" styleClass="form-label"/>
+						<ComboBox fx:id="vehicleComboBox" HBox.hgrow="ALWAYS"
+							styleClass="rental-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Start date" minWidth="130.0" styleClass="form-label"/>
+						<DatePicker fx:id="startDatePicker" styleClass="rental-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="End date" minWidth="130.0" styleClass="form-label"/>
+						<DatePicker fx:id="endDatePicker" styleClass="rental-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Estimated total" minWidth="130.0" styleClass="form-label"/>
+						<Label fx:id="totalPricePreviewLabel" text="—" styleClass="rental-state-label"/>
+					</children>
+				</HBox>
+				<Label text="The backend calculates and stores the final price."
+					styleClass="rental-price-note"/>
+				<VBox fx:id="formMessagesContainer" spacing="4.0"
+					visible="false" managed="false" styleClass="rental-validation-messages"/>
+				<HBox spacing="10.0">
+					<children>
+						<Button fx:id="saveButton" text="Save" onAction="#handleSave"
+							styleClass="primary-button"/>
+						<Button fx:id="cancelEditButton" text="Cancel" onAction="#handleCancelEdit"
+							styleClass="secondary-button"/>
+					</children>
+				</HBox>
+			</children>
+		</VBox>
+	</children>
+</VBox>

@@ -1,10 +1,12 @@
 package be.condorcet.easycarrent.desktop.navigation;
 
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.RentalService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.service.VehicleService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 import be.condorcet.easycarrent.desktop.view.CustomerController;
+import be.condorcet.easycarrent.desktop.view.RentalController;
 import be.condorcet.easycarrent.desktop.view.SectionPlaceholderController;
 import be.condorcet.easycarrent.desktop.view.VehicleCategoryController;
 import be.condorcet.easycarrent.desktop.view.VehicleController;
@@ -40,17 +42,21 @@ public final class MainContentRouter {
 			"/be/condorcet/easycarrent/desktop/view/vehicles-view.fxml";
 	static final String CUSTOMERS_FXML =
 			"/be/condorcet/easycarrent/desktop/view/customers-view.fxml";
+	static final String RENTALS_FXML =
+			"/be/condorcet/easycarrent/desktop/view/rentals-view.fxml";
 
 	private final StackPane contentHost;
 	private final VehicleCategoryService vehicleCategoryService;
 	private final VehicleService vehicleService;
 	private final CustomerService customerService;
+	private final RentalService rentalService;
 	private final SessionManager sessionManager;
 	private final NavigationState state = new NavigationState();
 
 	public MainContentRouter(StackPane contentHost,
 			VehicleCategoryService vehicleCategoryService, VehicleService vehicleService,
-			CustomerService customerService, SessionManager sessionManager) {
+			CustomerService customerService, RentalService rentalService,
+			SessionManager sessionManager) {
 		this.contentHost = Objects.requireNonNull(contentHost, "contentHost must not be null");
 		this.vehicleCategoryService =
 				Objects.requireNonNull(vehicleCategoryService, "vehicleCategoryService must not be null");
@@ -58,6 +64,8 @@ public final class MainContentRouter {
 				Objects.requireNonNull(vehicleService, "vehicleService must not be null");
 		this.customerService =
 				Objects.requireNonNull(customerService, "customerService must not be null");
+		this.rentalService =
+				Objects.requireNonNull(rentalService, "rentalService must not be null");
 		this.sessionManager = Objects.requireNonNull(sessionManager, "sessionManager must not be null");
 	}
 
@@ -88,6 +96,7 @@ public final class MainContentRouter {
 			case VEHICLE_CATEGORIES -> VEHICLE_CATEGORIES_FXML;
 			case VEHICLES -> VEHICLES_FXML;
 			case CUSTOMERS -> CUSTOMERS_FXML;
+			case RENTALS -> RENTALS_FXML;
 			default -> PLACEHOLDER_FXML;
 		};
 	}
@@ -109,6 +118,10 @@ public final class MainContentRouter {
 			case CUSTOMERS -> {
 				CustomerController controller = loader.getController();
 				controller.init(customerService, sessionManager);
+			}
+			case RENTALS -> {
+				RentalController controller = loader.getController();
+				controller.init(rentalService, customerService, vehicleService, sessionManager);
 			}
 			default -> {
 				SectionPlaceholderController controller = loader.getController();

@@ -6,6 +6,8 @@ import be.condorcet.easycarrent.desktop.dto.VehicleResponseDto;
 import be.condorcet.easycarrent.desktop.http.ApiClient;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -36,6 +38,26 @@ public final class VehicleService {
 	/** Lists all vehicles in the backend's order. */
 	public CompletableFuture<List<VehicleResponseDto>> findAll() {
 		return apiClient.getJsonList(VEHICLES_PATH, VehicleResponseDto.class, requireCredentials());
+	}
+
+	/**
+	 * Lists the vehicles the backend considers bookable for the given inclusive
+	 * period (GET {@code /api/vehicles/available}); that is, vehicles that are not
+	 * inactive or under maintenance and have no planned or active rental overlapping
+	 * the period. The backend remains authoritative: a vehicle can still become
+	 * unavailable between this lookup and the booking request.
+	 *
+	 * @param startDate the requested first rental day
+	 * @param endDate   the requested last rental day
+	 */
+	public CompletableFuture<List<VehicleResponseDto>> findAvailable(LocalDate startDate,
+			LocalDate endDate) {
+		Objects.requireNonNull(startDate, "startDate");
+		Objects.requireNonNull(endDate, "endDate");
+		String path = VEHICLES_PATH + "/available"
+				+ "?startDate=" + DateTimeFormatter.ISO_LOCAL_DATE.format(startDate)
+				+ "&endDate=" + DateTimeFormatter.ISO_LOCAL_DATE.format(endDate);
+		return apiClient.getJsonList(path, VehicleResponseDto.class, requireCredentials());
 	}
 
 	/** Creates a vehicle. */

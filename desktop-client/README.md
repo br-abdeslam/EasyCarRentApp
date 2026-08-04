@@ -10,13 +10,14 @@ module is a standalone Maven project, independent from the backend.
 ## Current scope
 
 The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
-JSON foundation, a login workflow, the authenticated application shell, and three
-backend-connected domain screens (**Vehicle Categories**, **Vehicles**, and
-**Customers**). It starts on a login screen, authenticates against the backend
-using HTTP Basic, keeps the session in memory, and then shows the main shell: a
-persistent header (username, role, logout), a sidebar to navigate between
-sections, and a routed central content area. **Vehicle Categories**, **Vehicles**,
-and **Customers** are real screens backed by the API; the other four sections
+JSON foundation, a login workflow, the authenticated application shell, and four
+backend-connected domain screens (**Vehicle Categories**, **Vehicles**,
+**Customers**, and **Rentals**). It starts on a login screen, authenticates
+against the backend using HTTP Basic, keeps the session in memory, and then shows
+the main shell: a persistent header (username, role, logout), a sidebar to
+navigate between sections, and a routed central content area. **Vehicle
+Categories**, **Vehicles**, **Customers**, and **Rentals** are real screens backed
+by the API; the other three sections (**Dashboard**, **Payments**, **Maintenance**)
 remain routed **placeholder** views.
 
 ## Main application shell
@@ -32,8 +33,8 @@ remain routed **placeholder** views.
 - **Routing** — clicking a section replaces only the central content; the header
   and sidebar stay in place and no new window is opened. **Dashboard** is selected
   by default, and exactly one section stays selected. **Vehicle Categories**,
-  **Vehicles**, and **Customers** load their real views; the remaining sections
-  load placeholders that state they are prepared for future functionality.
+  **Vehicles**, **Customers**, and **Rentals** load their real views; the remaining
+  sections load placeholders that state they are prepared for future functionality.
 
 ## Customers
 
@@ -62,6 +63,58 @@ inside the central content area (header and sidebar stay visible).
 
 Personal data is treated carefully: only the fields the screen needs are shown,
 customer records are never logged, and no real customer data is committed.
+
+## Rentals
+
+The Rentals screen is connected to the backend `/api/rentals` API and opens inside
+the central content area (header and sidebar stay visible).
+
+- **Loading, empty, and error states** — rentals load asynchronously (the JavaFX
+  Application Thread is never blocked); the table shows the real backend data (id,
+  customer name, vehicle, start date, end date, status, and the backend-calculated
+  total price). An empty list and API/connection failures are shown with a safe
+  message and no stack traces.
+- **Refresh** — reloads the current backend state; only one load runs at a time,
+  and the selection is preserved by id.
+- **Customer and vehicle selection** — the editor loads customers from
+  `/api/customers` and vehicles from `/api/vehicles`, showing a readable label
+  (customer first and last name; vehicle `registration — brand model`) while
+  sending only the selected **id**. In create mode, when both dates form a valid
+  period, the vehicle choices are narrowed to those the backend reports as
+  available for that period via `/api/vehicles/available`; the backend still
+  rejects a conflict on save if a vehicle becomes unavailable in the meantime.
+- **Dates and price** — the start and end dates are required and the end date must
+  be strictly after the start date (a same-day rental is rejected, matching the
+  backend); past dates are accepted because the backend accepts them. The status
+  and the total price are **backend-managed** and shown read-only; the editor shows
+  only a clearly-labelled, non-authoritative estimate and never submits a price or
+  a status.
+- **Status workflow** — the backend lifecycle is `PLANNED → ACTIVE → COMPLETED`
+  with `PLANNED → CANCELLED`. The screen offers only the transitions the selected
+  status allows, each through its dedicated backend endpoint: **Start**
+  (`PLANNED → ACTIVE`), **Complete** (`ACTIVE → COMPLETED`), and **Cancel rental**
+  (`PLANNED → CANCELLED`). The status changes only after backend confirmation.
+- **Role-aware controls** — per the backend security rules, USER and ADMIN may
+  read, book, update, and run the lifecycle transitions; **only ADMIN may delete**
+  a rental, so the Delete control is shown only to ADMIN. A role with no rental
+  permission sees a read-only screen; the backend remains authoritative.
+- **Create / edit** — an in-view form validates the selections and dates locally
+  (customer, vehicle, start date, and end date required; end after start) before
+  sending; only a PLANNED rental can be edited. Backend validation errors and
+  booking conflicts (overlap, unavailable vehicle, licence expiry) are shown below
+  the form, while list, delete, and transition feedback is shown above the table so
+  a stale form error never lingers there.
+- **Overlap and conflicts** — a vehicle with a PLANNED or ACTIVE rental overlapping
+  the requested period is rejected by the backend; the editor and entered data are
+  kept, no second forced request is sent, and the safe conflict message is shown.
+- **Delete** — requires confirmation (identifying the rental by id, vehicle, and
+  period). Only a PLANNED or CANCELLED rental can be deleted; deleting an active or
+  completed rental, or one a payment references, is rejected by the backend and
+  reported safely, and the rental is kept.
+
+Monetary values use `BigDecimal` end to end. Only the customer name is shown (no
+other personal data), rentals are never logged, and no fake rental data is
+displayed.
 
 ## Vehicles
 
@@ -194,11 +247,13 @@ desktop-client/
     │   │   └── be/condorcet/easycarrent/desktop/
     │   │       ├── App.java
     │   │       ├── auth/{BasicCredentials, DesktopUserRole, AuthenticatedUser,
-    │   │       │        VehicleCategoryPermissions, VehiclePermissions, CustomerPermissions}.java
+    │   │       │        VehicleCategoryPermissions, VehiclePermissions, CustomerPermissions,
+    │   │       │        RentalPermissions}.java
     │   │       ├── config/ApiConfiguration.java
     │   │       ├── dto/{ApiErrorDto, VehicleCategoryResponseDto, VehicleCategoryRequestDto,
     │   │       │       VehicleResponseDto, VehicleRequestDto, VehicleStatus,
-    │   │       │       CustomerResponseDto, CustomerRequestDto}.java
+    │   │       │       CustomerResponseDto, CustomerRequestDto,
+    │   │       │       RentalResponseDto, RentalRequestDto, RentalStatus}.java
     │   │       ├── http/{ApiClient, JsonMapperFactory}.java
     │   │       ├── http/{ApiRequestException, ApiConnectionException}.java
     │   │       ├── navigation/{MainSection, NavigationState, MainContentRouter}.java
@@ -206,17 +261,19 @@ desktop-client/
     │   │       ├── service/{AuthenticationService, AuthenticationResult}.java
     │   │       ├── service/{VehicleCategoryService, VehicleCategoryValidator}.java
     │   │       ├── service/{VehicleService, VehicleValidator}.java
-    │   │       ├── service/{CustomerService, CustomerValidator}.java
+    │   │       ├── service/{CustomerService, CustomerValidator, CustomerDateFormatter}.java
+    │   │       ├── service/{RentalService, RentalValidator, RentalMessages, RentalFormatter}.java
     │   │       ├── session/{SessionManager, UserSession}.java
     │   │       └── view/{ViewManager, LoginController, MainViewController,
     │   │       │         SectionPlaceholderController, VehicleCategoryController,
     │   │       │         VehicleCategoryViewState, VehicleController, VehicleViewState,
-    │   │       │         CustomerController, CustomerViewState}.java
+    │   │       │         CustomerController, CustomerViewState, CustomerMessageState,
+    │   │       │         RentalController, RentalViewState, RentalMessageState}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
     │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml,
     │                 vehicle-categories-view.fxml, vehicles-view.fxml,
-    │                 customers-view.fxml, app.css}
+    │                 customers-view.fxml, rentals-view.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
@@ -229,8 +286,10 @@ desktop-client/
   main views only.
 - **MainContentRouter** — routes the central content of the main shell between
   sections (loading `vehicle-categories-view.fxml` for Vehicle Categories,
-  `vehicles-view.fxml` for Vehicles, `customers-view.fxml` for Customers, and the
-  placeholder otherwise); it owns no Stage and performs no authentication or HTTP.
+  `vehicles-view.fxml` for Vehicles, `customers-view.fxml` for Customers,
+  `rentals-view.fxml` for Rentals, and the placeholder otherwise); it injects the
+  shared domain services into each loaded controller but owns no Stage and performs
+  no authentication or HTTP.
 - **MainSection / NavigationState** — the available sections and the current
   selection (pure, JavaFX-free).
 - **MainViewController** — main-shell UI events and state.
@@ -268,9 +327,29 @@ desktop-client/
 - **CustomerPermissions** — the role-based read/write rules for customers.
 - **CustomerResponseDto / CustomerRequestDto** — customer API contracts (the
   driving-licence expiry is a `LocalDate`).
+- **RentalService** — the rental API workflow over `/api/rentals`, including the
+  dedicated `PATCH` lifecycle transitions (`start`, `complete`, `cancel`) so the
+  backend's transition rules are never bypassed by a generic update.
+- **RentalController / rentals-view.fxml** — the rental screen's UI events and
+  structure (reusing `CustomerService` and `VehicleService` to populate the editor,
+  and `VehicleService.findAvailable` for available vehicles in create mode).
+- **RentalViewState** — pure, JavaFX-free presentation state for the rental screen
+  (loading, selection, editor mode, per-status transition gating, permissions, and
+  lookup availability).
+- **RentalValidator** — client-side rental validation mirroring the backend rules
+  (customer, vehicle, and both dates required; end strictly after start; past dates
+  accepted).
+- **RentalMessages / RentalMessageState** — JavaFX-free safe-message formatting and
+  the form-versus-status message placement model (a stale form error never lingers
+  above the table).
+- **RentalFormatter** — JavaFX-free date, price, and status formatting for display.
+- **RentalPermissions** — the role-based rules for rentals (USER and ADMIN may read,
+  book, update, and transition; only ADMIN may delete).
+- **RentalResponseDto / RentalRequestDto / RentalStatus** — rental API contracts;
+  the status and total price are backend-managed and read-only in the client.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
 - **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth GET,
-  and authenticated JSON list/POST/PUT/DELETE).
+  and authenticated JSON list/POST/PUT/PATCH/DELETE).
 - **JsonMapperFactory** — shared JSON mapper configuration.
 - **AuthenticationService / AuthenticationResult** — the login use case.
 - **SessionManager / UserSession** — in-memory authenticated session.
@@ -332,5 +411,6 @@ A resizable window titled **Easy Car Rent**:
   only the central content. **Log out** returns to the login screen.
 
 The window can be resized (the sidebar keeps a stable width and the content area
-grows) and closes normally. Domain data, tables, and CRUD are not yet
-implemented.
+grows) and closes normally. The **Vehicle Categories**, **Vehicles**,
+**Customers**, and **Rentals** sections show real backend-connected tables and
+editors; **Dashboard**, **Payments**, and **Maintenance** remain placeholders.

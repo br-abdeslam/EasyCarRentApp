@@ -32,6 +32,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/vehicles-view.fxml";
 	private static final String CUSTOMERS_FXML =
 			"/be/condorcet/easycarrent/desktop/view/customers-view.fxml";
+	private static final String RENTALS_FXML =
+			"/be/condorcet/easycarrent/desktop/view/rentals-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -199,6 +201,8 @@ class AppResourcesTest {
 				"vehicles-view.fxml must not use inline style attributes");
 		assertFalse(readResource(CUSTOMERS_FXML).contains("style=\""),
 				"customers-view.fxml must not use inline style attributes");
+		assertFalse(readResource(RENTALS_FXML).contains("style=\""),
+				"rentals-view.fxml must not use inline style attributes");
 	}
 
 	@Test
@@ -305,6 +309,126 @@ class AppResourcesTest {
 				".customer-status-success", ".customer-status-error", ".customer-editor",
 				".customer-editor-title", ".customer-form-field", ".customer-validation-message",
 				".customer-validation-messages"}) {
+			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
+		}
+	}
+
+	@Test
+	void rentalsFxmlExistsAndIsWellFormed() throws Exception {
+		assertNotNull(resource(RENTALS_FXML),
+				"rentals-view.fxml must exist on the test classpath");
+		try (InputStream in = stream(RENTALS_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"rentals-view.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void rentalsFxmlDeclaresController() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.RentalController\""),
+				"rentals-view.fxml must declare RentalController");
+	}
+
+	@Test
+	void rentalsFxmlContainsTableAndColumns() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		assertTrue(fxml.contains("fx:id=\"rentalTable\""), "rentalTable required");
+		for (String column : new String[] {"idColumn", "customerColumn", "vehicleColumn",
+				"startDateColumn", "endDateColumn", "statusColumn", "totalPriceColumn"}) {
+			assertTrue(fxml.contains("fx:id=\"" + column + "\""), column + " required");
+		}
+	}
+
+	@Test
+	void rentalsFxmlContainsSupportedActionControls() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		for (String id : new String[] {"refreshButton", "addButton", "editButton",
+				"startRentalButton", "completeRentalButton", "cancelRentalButton", "deleteButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void rentalsFxmlHasNoUnsupportedActionControls() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		// The backend exposes no reactivate/return/reopen transitions, so no such control exists.
+		for (String id : new String[] {"reactivateRentalButton", "returnRentalButton",
+				"reopenRentalButton", "payButton", "invoiceButton"}) {
+			assertFalse(fxml.contains("fx:id=\"" + id + "\""), id + " must not exist");
+		}
+	}
+
+	@Test
+	void rentalsFxmlContainsStateControls() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		for (String id : new String[] {"loadingIndicator", "statusMessageLabel", "emptyStateLabel",
+				"readOnlyNoticeLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void rentalsFxmlContainsEditorControls() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		for (String id : new String[] {"customerComboBox", "vehicleComboBox", "startDatePicker",
+				"endDatePicker", "formMessagesContainer", "saveButton", "cancelEditButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void rentalsFxmlUsesComboBoxesForCustomerAndVehicle() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		String customerLine = lineContaining(RENTALS_FXML, "fx:id=\"customerComboBox\"");
+		String vehicleLine = lineContaining(RENTALS_FXML, "fx:id=\"vehicleComboBox\"");
+		assertTrue(customerLine.contains("<ComboBox"), "the customer selector must be a ComboBox");
+		assertTrue(vehicleLine.contains("<ComboBox"), "the vehicle selector must be a ComboBox");
+		assertFalse(customerLine.contains("editable=\"true\""),
+				"the customer ComboBox must not be free-text editable");
+		assertFalse(vehicleLine.contains("editable=\"true\""),
+				"the vehicle ComboBox must not be free-text editable");
+	}
+
+	@Test
+	void rentalsFxmlDoesNotExposeServerManagedFields() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		// Status and total price are backend-managed; there must be no editable field for them.
+		assertFalse(fxml.contains("fx:id=\"statusField\""), "status must not be editable");
+		assertFalse(fxml.contains("fx:id=\"statusComboBox\""), "status must not be editable");
+		assertFalse(fxml.contains("fx:id=\"totalPriceField\""), "total price must not be editable");
+		// The estimate is a read-only Label, not an input.
+		String estimateLine = lineContaining(RENTALS_FXML, "fx:id=\"totalPricePreviewLabel\"");
+		assertTrue(estimateLine.contains("<Label"), "the total-price estimate must be a read-only Label");
+	}
+
+	@Test
+	void rentalsFxmlHasNoPasswordPaymentOrStaticData() throws Exception {
+		String fxml = readResource(RENTALS_FXML);
+		assertFalse(fxml.contains("<PasswordField"), "rentals-view.fxml must not contain a password field");
+		assertFalse(fxml.toLowerCase().contains("payment"), "rentals-view.fxml must not contain payment controls");
+		assertFalse(fxml.contains("<items>"), "the rental table must not define hardcoded rows");
+	}
+
+	@Test
+	void rentalsStatusLabelWraps() throws Exception {
+		assertTrue(lineContaining(RENTALS_FXML, "fx:id=\"statusMessageLabel\"")
+				.contains("wrapText=\"true\""),
+				"the status label must wrap so long messages are readable");
+	}
+
+	@Test
+	void appStylesheetContainsRentalClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		for (String cssClass : new String[] {
+				".rental-view", ".rental-header", ".rental-toolbar", ".rental-table",
+				".rental-empty-state", ".rental-loading", ".rental-status-message",
+				".rental-status-success", ".rental-status-error", ".rental-editor",
+				".rental-editor-title", ".rental-form-field", ".rental-validation-messages",
+				".rental-validation-message", ".rental-state-label", ".rental-price-column"}) {
 			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
 		}
 	}

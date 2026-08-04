@@ -10,15 +10,15 @@ module is a standalone Maven project, independent from the backend.
 ## Current scope
 
 The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
-JSON foundation, a login workflow, the authenticated application shell, and five
+JSON foundation, a login workflow, the authenticated application shell, and six
 backend-connected domain screens (**Vehicle Categories**, **Vehicles**,
-**Customers**, **Rentals**, and **Payments**). It starts on a login screen,
-authenticates against the backend using HTTP Basic, keeps the session in memory,
-and then shows the main shell: a persistent header (username, role, logout), a
-sidebar to navigate between sections, and a routed central content area. **Vehicle
-Categories**, **Vehicles**, **Customers**, **Rentals**, and **Payments** are real
-screens backed by the API; the other two sections (**Dashboard** and
-**Maintenance**) remain routed **placeholder** views.
+**Customers**, **Rentals**, **Payments**, and **Maintenance**). It starts on a
+login screen, authenticates against the backend using HTTP Basic, keeps the session
+in memory, and then shows the main shell: a persistent header (username, role,
+logout), a sidebar to navigate between sections, and a routed central content area.
+**Vehicle Categories**, **Vehicles**, **Customers**, **Rentals**, **Payments**, and
+**Maintenance** are real screens backed by the API; only **Dashboard** remains a
+routed **placeholder** view.
 
 ## Main application shell
 
@@ -33,9 +33,9 @@ screens backed by the API; the other two sections (**Dashboard** and
 - **Routing** — clicking a section replaces only the central content; the header
   and sidebar stay in place and no new window is opened. **Dashboard** is selected
   by default, and exactly one section stays selected. **Vehicle Categories**,
-  **Vehicles**, **Customers**, **Rentals**, and **Payments** load their real views;
-  the remaining sections load placeholders that state they are prepared for future
-  functionality.
+  **Vehicles**, **Customers**, **Rentals**, **Payments**, and **Maintenance** load
+  their real views; **Dashboard** loads a placeholder that states it is prepared for
+  future functionality.
 
 ## Customers
 
@@ -165,6 +165,54 @@ inside the central content area (header and sidebar stay visible).
 Monetary values use `BigDecimal` end to end. Only the rental reference and (when
 the rental is loaded) the customer name are shown, payments are never logged, and
 no fake payment data is displayed.
+
+## Maintenance
+
+The Maintenance screen is connected to the backend `/api/maintenance-records` API
+and opens inside the central content area (header and sidebar stay visible).
+
+- **Loading, empty, and error states** — maintenance records load asynchronously
+  (the JavaFX Application Thread is never blocked); the table shows the real backend
+  data (id, vehicle, description, start date, end date, cost, status). An empty list
+  and API/connection failures are shown with a safe message and no stack traces.
+- **Refresh** — reloads the current backend state; only one load runs at a time,
+  and the selection is preserved by id.
+- **Vehicle selection** — the editor loads vehicles from `/api/vehicles` and offers,
+  as create choices, only the vehicles that may have maintenance scheduled (any
+  vehicle that is not `INACTIVE`; the backend rejects an inactive vehicle). Each
+  option shows a readable label (`registration — brand model`) while submitting only
+  the vehicle **id**; the table's vehicle column is enriched from the same lookup.
+- **Dates, cost, and status** — the request carries the vehicle, a description
+  (required, at most 500 characters), the start and end dates (the end date must be
+  on or after the start date; same-day is allowed and past dates are accepted), and
+  the cost (`BigDecimal`, zero or positive, at most ten digits before the decimal
+  point and two decimals). The status is **backend-managed** (a new record starts
+  `PLANNED`) and shown read-only; there is no maintenance type or mileage in the
+  backend contract, so the screen has neither.
+- **Status workflow** — the backend lifecycle is `PLANNED → IN_PROGRESS →
+  COMPLETED`, each step through its dedicated endpoint: **Start** (`PLANNED →
+  IN_PROGRESS`, which the backend moves the vehicle to maintenance for) and
+  **Complete** (`IN_PROGRESS → COMPLETED`, which returns the vehicle to available).
+  The screen offers only the transition the selected status allows, and the status
+  changes only after backend confirmation.
+- **Role-aware controls** — per the backend security rules, reading is available to
+  USER and ADMIN, while **creating, starting, completing, and deleting all require
+  ADMIN**. A USER sees a read-only screen (a read-only notice is shown and the write
+  controls are hidden); the backend remains authoritative.
+- **Create** — an in-view form validates the selection and inputs locally before
+  sending; backend validation errors and conflicts (overlapping maintenance, an
+  overlapping rental, an inactive vehicle) are shown below the form, while list,
+  delete, and transition feedback is shown above the table so a stale form error
+  never lingers there.
+- **Delete** — ADMIN only, with a confirmation identifying the record by id,
+  vehicle, and period. Only a `PLANNED` record can be deleted; deleting an
+  in-progress or completed record is rejected by the backend and reported safely,
+  and the record is kept. There is no maintenance update on the backend, so the
+  screen offers no edit.
+
+Monetary values use `BigDecimal` end to end. Only the vehicle reference is shown
+(no customer data), maintenance records are never logged, and no fake maintenance
+data is displayed.
 
 ## Vehicles
 
@@ -298,13 +346,14 @@ desktop-client/
     │   │       ├── App.java
     │   │       ├── auth/{BasicCredentials, DesktopUserRole, AuthenticatedUser,
     │   │       │        VehicleCategoryPermissions, VehiclePermissions, CustomerPermissions,
-    │   │       │        RentalPermissions, PaymentPermissions}.java
+    │   │       │        RentalPermissions, PaymentPermissions, MaintenancePermissions}.java
     │   │       ├── config/ApiConfiguration.java
     │   │       ├── dto/{ApiErrorDto, VehicleCategoryResponseDto, VehicleCategoryRequestDto,
     │   │       │       VehicleResponseDto, VehicleRequestDto, VehicleStatus,
     │   │       │       CustomerResponseDto, CustomerRequestDto,
     │   │       │       RentalResponseDto, RentalRequestDto, RentalStatus,
-    │   │       │       PaymentResponseDto, PaymentRequestDto, PaymentStatus, PaymentMethod}.java
+    │   │       │       PaymentResponseDto, PaymentRequestDto, PaymentStatus, PaymentMethod,
+    │   │       │       MaintenanceResponseDto, MaintenanceRequestDto, MaintenanceStatus}.java
     │   │       ├── http/{ApiClient, JsonMapperFactory}.java
     │   │       ├── http/{ApiRequestException, ApiConnectionException}.java
     │   │       ├── navigation/{MainSection, NavigationState, MainContentRouter}.java
@@ -315,18 +364,21 @@ desktop-client/
     │   │       ├── service/{CustomerService, CustomerValidator, CustomerDateFormatter}.java
     │   │       ├── service/{RentalService, RentalValidator, RentalMessages, RentalFormatter}.java
     │   │       ├── service/{PaymentService, PaymentValidator, PaymentMessages, PaymentFormatter}.java
+    │   │       ├── service/{MaintenanceService, MaintenanceValidator, MaintenanceMessages,
+    │   │       │            MaintenanceFormatter}.java
     │   │       ├── session/{SessionManager, UserSession}.java
     │   │       └── view/{ViewManager, LoginController, MainViewController,
     │   │       │         SectionPlaceholderController, VehicleCategoryController,
     │   │       │         VehicleCategoryViewState, VehicleController, VehicleViewState,
     │   │       │         CustomerController, CustomerViewState, CustomerMessageState,
     │   │       │         RentalController, RentalViewState, RentalMessageState,
-    │   │       │         PaymentController, PaymentViewState, PaymentMessageState}.java
+    │   │       │         PaymentController, PaymentViewState, PaymentMessageState,
+    │   │       │         MaintenanceController, MaintenanceViewState, MaintenanceMessageState}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
     │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml,
-    │                 vehicle-categories-view.fxml, vehicles-view.fxml,
-    │                 customers-view.fxml, rentals-view.fxml, payments-view.fxml, app.css}
+    │                 vehicle-categories-view.fxml, vehicles-view.fxml, customers-view.fxml,
+    │                 rentals-view.fxml, payments-view.fxml, maintenance-view.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
@@ -340,9 +392,10 @@ desktop-client/
 - **MainContentRouter** — routes the central content of the main shell between
   sections (loading `vehicle-categories-view.fxml` for Vehicle Categories,
   `vehicles-view.fxml` for Vehicles, `customers-view.fxml` for Customers,
-  `rentals-view.fxml` for Rentals, `payments-view.fxml` for Payments, and the
-  placeholder otherwise); it injects the shared domain services into each loaded
-  controller but owns no Stage and performs no authentication or HTTP.
+  `rentals-view.fxml` for Rentals, `payments-view.fxml` for Payments,
+  `maintenance-view.fxml` for Maintenance, and the placeholder for Dashboard); it
+  injects the shared domain services into each loaded controller but owns no Stage
+  and performs no authentication or HTTP.
 - **MainSection / NavigationState** — the available sections and the current
   selection (pure, JavaFX-free).
 - **MainViewController** — main-shell UI events and state.
@@ -421,6 +474,29 @@ desktop-client/
 - **PaymentResponseDto / PaymentRequestDto / PaymentStatus / PaymentMethod** —
   payment API contracts; the amount, status, and timestamps are backend-managed and
   read-only in the client, and the request carries only the rental id and method.
+- **MaintenanceService** — the maintenance API workflow over
+  `/api/maintenance-records`, including the dedicated body-less `PATCH` start and
+  complete transitions; there is no maintenance update on the backend.
+- **MaintenanceController / maintenance-view.fxml** — the maintenance screen's UI
+  events and structure (reusing `VehicleService` to populate the vehicle selector
+  and to enrich the table label).
+- **MaintenanceViewState** — pure, JavaFX-free presentation state for the
+  maintenance screen (loading, selection, create mode, per-status transition
+  gating, the ADMIN-only write permission, and vehicle availability).
+- **MaintenanceValidator** — client-side maintenance validation mirroring the
+  backend rules (vehicle, description ≤ 500, dates with end on or after start, and a
+  zero-or-positive cost with at most ten integer digits and two decimals; past dates
+  accepted).
+- **MaintenanceMessages / MaintenanceMessageState** — JavaFX-free safe-message
+  formatting and the form-versus-status message placement model (a stale form error
+  never lingers above the table).
+- **MaintenanceFormatter** — JavaFX-free date, cost, and status formatting for
+  display.
+- **MaintenancePermissions** — the role-based rules for maintenance (USER and ADMIN
+  may read; creating, starting, completing, and deleting require ADMIN).
+- **MaintenanceResponseDto / MaintenanceRequestDto / MaintenanceStatus** —
+  maintenance API contracts; the status is backend-managed and read-only in the
+  client, and there is no maintenance type or mileage in the contract.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
 - **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth GET,
   and authenticated JSON list/POST/PUT/PATCH/DELETE).
@@ -486,5 +562,5 @@ A resizable window titled **Easy Car Rent**:
 
 The window can be resized (the sidebar keeps a stable width and the content area
 grows) and closes normally. The **Vehicle Categories**, **Vehicles**,
-**Customers**, **Rentals**, and **Payments** sections show real backend-connected
-tables and editors; **Dashboard** and **Maintenance** remain placeholders.
+**Customers**, **Rentals**, **Payments**, and **Maintenance** sections show real
+backend-connected tables and editors; only **Dashboard** remains a placeholder.

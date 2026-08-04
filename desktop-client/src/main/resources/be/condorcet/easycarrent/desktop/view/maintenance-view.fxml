@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+	xmlns:fx="http://javafx.com/fxml"
+	fx:controller="be.condorcet.easycarrent.desktop.view.MaintenanceController"
+	spacing="14.0" styleClass="maintenance-view">
+	<padding>
+		<Insets top="20.0" right="24.0" bottom="20.0" left="24.0"/>
+	</padding>
+	<children>
+		<HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="maintenance-header">
+			<children>
+				<VBox spacing="2.0">
+					<children>
+						<Label text="Maintenance" styleClass="maintenance-editor-title"/>
+						<Label text="Schedule and track maintenance for each vehicle."
+							styleClass="maintenance-status-message"/>
+					</children>
+				</VBox>
+				<Region HBox.hgrow="ALWAYS"/>
+				<Label fx:id="readOnlyNoticeLabel"
+					text="Read-only: your role cannot modify maintenance."
+					visible="false" managed="false" styleClass="maintenance-read-only-notice"/>
+				<ProgressIndicator fx:id="loadingIndicator" maxWidth="26.0" maxHeight="26.0"
+					visible="false" styleClass="maintenance-loading"/>
+			</children>
+		</HBox>
+
+		<HBox spacing="10.0" styleClass="maintenance-toolbar">
+			<children>
+				<Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh"
+					styleClass="secondary-button"/>
+				<Button fx:id="addButton" text="Add Maintenance" onAction="#handleAdd"
+					styleClass="primary-button"/>
+				<Button fx:id="startButton" text="Start" onAction="#handleStart"
+					styleClass="secondary-button"/>
+				<Button fx:id="completeButton" text="Complete" onAction="#handleComplete"
+					styleClass="secondary-button"/>
+				<Button fx:id="deleteButton" text="Delete" onAction="#handleDelete"
+					styleClass="danger-button"/>
+			</children>
+		</HBox>
+
+		<Label fx:id="statusMessageLabel" wrapText="true" visible="false" managed="false"
+			styleClass="maintenance-status-message"/>
+
+		<TableView fx:id="maintenanceTable" VBox.vgrow="ALWAYS" styleClass="maintenance-table">
+			<columns>
+				<TableColumn fx:id="idColumn" text="ID" prefWidth="55.0"/>
+				<TableColumn fx:id="vehicleColumn" text="Vehicle" prefWidth="200.0"/>
+				<TableColumn fx:id="descriptionColumn" text="Description" prefWidth="240.0"
+					styleClass="maintenance-description-column"/>
+				<TableColumn fx:id="startDateColumn" text="Start date" prefWidth="100.0"/>
+				<TableColumn fx:id="endDateColumn" text="End date" prefWidth="100.0"/>
+				<TableColumn fx:id="costColumn" text="Cost" prefWidth="90.0"
+					styleClass="maintenance-cost-column"/>
+				<TableColumn fx:id="statusColumn" text="Status" prefWidth="110.0"/>
+			</columns>
+		</TableView>
+
+		<Label fx:id="emptyStateLabel" text="No maintenance records yet."
+			visible="false" managed="false" styleClass="maintenance-empty-state"/>
+
+		<VBox fx:id="maintenanceEditor" spacing="10.0" visible="false" managed="false"
+			styleClass="maintenance-editor">
+			<children>
+				<Label fx:id="formTitleLabel" text="Add Maintenance" styleClass="maintenance-editor-title"/>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Vehicle" minWidth="130.0" styleClass="form-label"/>
+						<ComboBox fx:id="vehicleComboBox" HBox.hgrow="ALWAYS"
+							styleClass="maintenance-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" styleClass="form-row">
+					<children>
+						<Label text="Description" minWidth="130.0" styleClass="form-label"/>
+						<TextArea fx:id="descriptionArea" prefRowCount="3" wrapText="true"
+							HBox.hgrow="ALWAYS" styleClass="maintenance-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Start date" minWidth="130.0" styleClass="form-label"/>
+						<DatePicker fx:id="startDatePicker" styleClass="maintenance-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="End date" minWidth="130.0" styleClass="form-label"/>
+						<DatePicker fx:id="endDatePicker" styleClass="maintenance-form-field"/>
+					</children>
+				</HBox>
+				<HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="form-row">
+					<children>
+						<Label text="Cost" minWidth="130.0" styleClass="form-label"/>
+						<TextField fx:id="costField" HBox.hgrow="ALWAYS"
+							styleClass="maintenance-form-field"/>
+					</children>
+				</HBox>
+				<VBox fx:id="formMessagesContainer" spacing="4.0"
+					visible="false" managed="false" styleClass="maintenance-validation-messages"/>
+				<HBox spacing="10.0">
+					<children>
+						<Button fx:id="saveButton" text="Save" onAction="#handleSave"
+							styleClass="primary-button"/>
+						<Button fx:id="cancelEditButton" text="Cancel" onAction="#handleCancelEdit"
+							styleClass="secondary-button"/>
+					</children>
+				</HBox>
+			</children>
+		</VBox>
+	</children>
+</VBox>

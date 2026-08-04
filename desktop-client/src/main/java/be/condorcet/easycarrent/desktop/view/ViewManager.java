@@ -2,6 +2,7 @@ package be.condorcet.easycarrent.desktop.view;
 
 import be.condorcet.easycarrent.desktop.service.AuthenticationService;
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.MaintenanceService;
 import be.condorcet.easycarrent.desktop.service.PaymentService;
 import be.condorcet.easycarrent.desktop.service.RentalService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
@@ -46,11 +47,13 @@ public final class ViewManager {
 	private final CustomerService customerService;
 	private final RentalService rentalService;
 	private final PaymentService paymentService;
+	private final MaintenanceService maintenanceService;
 
 	public ViewManager(Stage stage, AuthenticationService authenticationService,
 			SessionManager sessionManager, VehicleCategoryService vehicleCategoryService,
 			VehicleService vehicleService, CustomerService customerService,
-			RentalService rentalService, PaymentService paymentService) {
+			RentalService rentalService, PaymentService paymentService,
+			MaintenanceService maintenanceService) {
 		this.stage = Objects.requireNonNull(stage, "stage");
 		this.authenticationService =
 				Objects.requireNonNull(authenticationService, "authenticationService");
@@ -61,6 +64,7 @@ public final class ViewManager {
 		this.customerService = Objects.requireNonNull(customerService, "customerService");
 		this.rentalService = Objects.requireNonNull(rentalService, "rentalService");
 		this.paymentService = Objects.requireNonNull(paymentService, "paymentService");
+		this.maintenanceService = Objects.requireNonNull(maintenanceService, "maintenanceService");
 	}
 
 	/** Builds the primary scene showing the login view and displays the stage. */
@@ -95,7 +99,7 @@ public final class ViewManager {
 		Parent root = load(loader);
 		MainViewController controller = loader.getController();
 		controller.init(sessionManager, this, vehicleCategoryService, vehicleService, customerService,
-				rentalService, paymentService);
+				rentalService, paymentService, maintenanceService);
 		return root;
 	}
 

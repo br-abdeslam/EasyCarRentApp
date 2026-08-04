@@ -10,15 +10,15 @@ module is a standalone Maven project, independent from the backend.
 ## Current scope
 
 The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
-JSON foundation, a login workflow, the authenticated application shell, and four
+JSON foundation, a login workflow, the authenticated application shell, and five
 backend-connected domain screens (**Vehicle Categories**, **Vehicles**,
-**Customers**, and **Rentals**). It starts on a login screen, authenticates
-against the backend using HTTP Basic, keeps the session in memory, and then shows
-the main shell: a persistent header (username, role, logout), a sidebar to
-navigate between sections, and a routed central content area. **Vehicle
-Categories**, **Vehicles**, **Customers**, and **Rentals** are real screens backed
-by the API; the other three sections (**Dashboard**, **Payments**, **Maintenance**)
-remain routed **placeholder** views.
+**Customers**, **Rentals**, and **Payments**). It starts on a login screen,
+authenticates against the backend using HTTP Basic, keeps the session in memory,
+and then shows the main shell: a persistent header (username, role, logout), a
+sidebar to navigate between sections, and a routed central content area. **Vehicle
+Categories**, **Vehicles**, **Customers**, **Rentals**, and **Payments** are real
+screens backed by the API; the other two sections (**Dashboard** and
+**Maintenance**) remain routed **placeholder** views.
 
 ## Main application shell
 
@@ -33,8 +33,9 @@ remain routed **placeholder** views.
 - **Routing** — clicking a section replaces only the central content; the header
   and sidebar stay in place and no new window is opened. **Dashboard** is selected
   by default, and exactly one section stays selected. **Vehicle Categories**,
-  **Vehicles**, **Customers**, and **Rentals** load their real views; the remaining
-  sections load placeholders that state they are prepared for future functionality.
+  **Vehicles**, **Customers**, **Rentals**, and **Payments** load their real views;
+  the remaining sections load placeholders that state they are prepared for future
+  functionality.
 
 ## Customers
 
@@ -115,6 +116,55 @@ the central content area (header and sidebar stay visible).
 Monetary values use `BigDecimal` end to end. Only the customer name is shown (no
 other personal data), rentals are never logged, and no fake rental data is
 displayed.
+
+## Payments
+
+The Payments screen is connected to the backend `/api/payments` API and opens
+inside the central content area (header and sidebar stay visible).
+
+- **Loading, empty, and error states** — payments load asynchronously (the JavaFX
+  Application Thread is never blocked); the table shows the real backend data (id,
+  rental, amount, method, status, created and paid timestamps). An empty list and
+  API/connection failures are shown with a safe message and no stack traces.
+- **Refresh** — reloads the current backend state; only one load runs at a time,
+  and the selection is preserved by id.
+- **Rental selection** — the editor loads rentals from `/api/rentals` and offers,
+  as create choices, only the rentals eligible for a new payment: those that are
+  **active or completed** and do not already have a payment (the backend allows at
+  most one payment per rental). Each option shows a readable label (`Rental #id —
+  registration brand model — customer name (status)`) while submitting only the
+  rental **id**. The backend remains authoritative and still rejects a duplicate or
+  non-payable rental.
+- **Amount, status, and dates are backend-managed** — the request carries only the
+  rental id and the chosen method. The **amount is derived by the backend** from the
+  rental total (the editor shows it read-only, from the selected rental's total),
+  the status starts at `PENDING`, and the created/paid timestamps are set by the
+  backend; none of them is editable or submitted by the client.
+- **Payment method** — a fixed `CASH` / `CARD` / `BANK_TRANSFER` choice (no card,
+  bank, or provider data is entered or stored).
+- **Status workflow** — the backend lifecycle is `PENDING → PAID` (Mark paid),
+  `PENDING → FAILED` (Mark failed), `FAILED → PENDING` (Retry), and `PAID →
+  REFUNDED` (Refund), each through its dedicated endpoint. The screen offers only
+  the transitions the selected status allows, and the status changes only after
+  backend confirmation.
+- **Role-aware controls** — per the backend security rules, USER and ADMIN may
+  read, create, and run the pay/fail/retry transitions; **only ADMIN may refund or
+  delete** a payment, so those controls are shown only to ADMIN. A role with no
+  payment permission sees a read-only screen; the backend remains authoritative.
+- **Create** — an in-view form validates the selections locally (rental and method
+  required) before sending; backend validation errors and conflicts (duplicate
+  payment, non-payable rental) are shown below the form, while list, delete, and
+  transition feedback is shown above the table so a stale form error never lingers
+  there.
+- **Delete** — ADMIN only, with a confirmation identifying the payment by id,
+  rental, and amount. Only a `PENDING` or `FAILED` payment can be deleted; deleting
+  a paid or refunded payment is rejected by the backend and reported safely, and the
+  payment is kept. There is no payment update on the backend, so the screen offers
+  no edit.
+
+Monetary values use `BigDecimal` end to end. Only the rental reference and (when
+the rental is loaded) the customer name are shown, payments are never logged, and
+no fake payment data is displayed.
 
 ## Vehicles
 
@@ -248,12 +298,13 @@ desktop-client/
     │   │       ├── App.java
     │   │       ├── auth/{BasicCredentials, DesktopUserRole, AuthenticatedUser,
     │   │       │        VehicleCategoryPermissions, VehiclePermissions, CustomerPermissions,
-    │   │       │        RentalPermissions}.java
+    │   │       │        RentalPermissions, PaymentPermissions}.java
     │   │       ├── config/ApiConfiguration.java
     │   │       ├── dto/{ApiErrorDto, VehicleCategoryResponseDto, VehicleCategoryRequestDto,
     │   │       │       VehicleResponseDto, VehicleRequestDto, VehicleStatus,
     │   │       │       CustomerResponseDto, CustomerRequestDto,
-    │   │       │       RentalResponseDto, RentalRequestDto, RentalStatus}.java
+    │   │       │       RentalResponseDto, RentalRequestDto, RentalStatus,
+    │   │       │       PaymentResponseDto, PaymentRequestDto, PaymentStatus, PaymentMethod}.java
     │   │       ├── http/{ApiClient, JsonMapperFactory}.java
     │   │       ├── http/{ApiRequestException, ApiConnectionException}.java
     │   │       ├── navigation/{MainSection, NavigationState, MainContentRouter}.java
@@ -263,17 +314,19 @@ desktop-client/
     │   │       ├── service/{VehicleService, VehicleValidator}.java
     │   │       ├── service/{CustomerService, CustomerValidator, CustomerDateFormatter}.java
     │   │       ├── service/{RentalService, RentalValidator, RentalMessages, RentalFormatter}.java
+    │   │       ├── service/{PaymentService, PaymentValidator, PaymentMessages, PaymentFormatter}.java
     │   │       ├── session/{SessionManager, UserSession}.java
     │   │       └── view/{ViewManager, LoginController, MainViewController,
     │   │       │         SectionPlaceholderController, VehicleCategoryController,
     │   │       │         VehicleCategoryViewState, VehicleController, VehicleViewState,
     │   │       │         CustomerController, CustomerViewState, CustomerMessageState,
-    │   │       │         RentalController, RentalViewState, RentalMessageState}.java
+    │   │       │         RentalController, RentalViewState, RentalMessageState,
+    │   │       │         PaymentController, PaymentViewState, PaymentMessageState}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
     │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml,
     │                 vehicle-categories-view.fxml, vehicles-view.fxml,
-    │                 customers-view.fxml, rentals-view.fxml, app.css}
+    │                 customers-view.fxml, rentals-view.fxml, payments-view.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
@@ -287,9 +340,9 @@ desktop-client/
 - **MainContentRouter** — routes the central content of the main shell between
   sections (loading `vehicle-categories-view.fxml` for Vehicle Categories,
   `vehicles-view.fxml` for Vehicles, `customers-view.fxml` for Customers,
-  `rentals-view.fxml` for Rentals, and the placeholder otherwise); it injects the
-  shared domain services into each loaded controller but owns no Stage and performs
-  no authentication or HTTP.
+  `rentals-view.fxml` for Rentals, `payments-view.fxml` for Payments, and the
+  placeholder otherwise); it injects the shared domain services into each loaded
+  controller but owns no Stage and performs no authentication or HTTP.
 - **MainSection / NavigationState** — the available sections and the current
   selection (pure, JavaFX-free).
 - **MainViewController** — main-shell UI events and state.
@@ -347,6 +400,27 @@ desktop-client/
   book, update, and transition; only ADMIN may delete).
 - **RentalResponseDto / RentalRequestDto / RentalStatus** — rental API contracts;
   the status and total price are backend-managed and read-only in the client.
+- **PaymentService** — the payment API workflow over `/api/payments`, including the
+  dedicated body-less `PATCH` lifecycle transitions (`pay`, `fail`, `retry`,
+  `refund`); there is no payment update on the backend.
+- **PaymentController / payments-view.fxml** — the payment screen's UI events and
+  structure (reusing `RentalService` to populate the rental selector and to enrich
+  the table label).
+- **PaymentViewState** — pure, JavaFX-free presentation state for the payment
+  screen (loading, selection, create mode, per-status transition gating,
+  permissions, and eligible-rental availability).
+- **PaymentValidator** — client-side payment validation mirroring the backend rules
+  (rental and method required; amount and status are backend-owned).
+- **PaymentMessages / PaymentMessageState** — JavaFX-free safe-message formatting
+  and the form-versus-status message placement model (a stale form error never
+  lingers above the table).
+- **PaymentFormatter** — JavaFX-free amount, timestamp, status, and method
+  formatting for display.
+- **PaymentPermissions** — the role-based rules for payments (USER and ADMIN may
+  read, create, and pay/fail/retry; only ADMIN may refund or delete).
+- **PaymentResponseDto / PaymentRequestDto / PaymentStatus / PaymentMethod** —
+  payment API contracts; the amount, status, and timestamps are backend-managed and
+  read-only in the client, and the request carries only the rental id and method.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
 - **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth GET,
   and authenticated JSON list/POST/PUT/PATCH/DELETE).
@@ -412,5 +486,5 @@ A resizable window titled **Easy Car Rent**:
 
 The window can be resized (the sidebar keeps a stable width and the content area
 grows) and closes normally. The **Vehicle Categories**, **Vehicles**,
-**Customers**, and **Rentals** sections show real backend-connected tables and
-editors; **Dashboard**, **Payments**, and **Maintenance** remain placeholders.
+**Customers**, **Rentals**, and **Payments** sections show real backend-connected
+tables and editors; **Dashboard** and **Maintenance** remain placeholders.

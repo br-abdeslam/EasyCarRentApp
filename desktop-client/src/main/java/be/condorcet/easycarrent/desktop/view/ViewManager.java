@@ -2,6 +2,7 @@ package be.condorcet.easycarrent.desktop.view;
 
 import be.condorcet.easycarrent.desktop.service.AuthenticationService;
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.PaymentService;
 import be.condorcet.easycarrent.desktop.service.RentalService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.service.VehicleService;
@@ -44,11 +45,12 @@ public final class ViewManager {
 	private final VehicleService vehicleService;
 	private final CustomerService customerService;
 	private final RentalService rentalService;
+	private final PaymentService paymentService;
 
 	public ViewManager(Stage stage, AuthenticationService authenticationService,
 			SessionManager sessionManager, VehicleCategoryService vehicleCategoryService,
 			VehicleService vehicleService, CustomerService customerService,
-			RentalService rentalService) {
+			RentalService rentalService, PaymentService paymentService) {
 		this.stage = Objects.requireNonNull(stage, "stage");
 		this.authenticationService =
 				Objects.requireNonNull(authenticationService, "authenticationService");
@@ -58,6 +60,7 @@ public final class ViewManager {
 		this.vehicleService = Objects.requireNonNull(vehicleService, "vehicleService");
 		this.customerService = Objects.requireNonNull(customerService, "customerService");
 		this.rentalService = Objects.requireNonNull(rentalService, "rentalService");
+		this.paymentService = Objects.requireNonNull(paymentService, "paymentService");
 	}
 
 	/** Builds the primary scene showing the login view and displays the stage. */
@@ -92,7 +95,7 @@ public final class ViewManager {
 		Parent root = load(loader);
 		MainViewController controller = loader.getController();
 		controller.init(sessionManager, this, vehicleCategoryService, vehicleService, customerService,
-				rentalService);
+				rentalService, paymentService);
 		return root;
 	}
 

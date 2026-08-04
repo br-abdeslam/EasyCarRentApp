@@ -36,6 +36,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/rentals-view.fxml";
 	private static final String PAYMENTS_FXML =
 			"/be/condorcet/easycarrent/desktop/view/payments-view.fxml";
+	private static final String MAINTENANCE_FXML =
+			"/be/condorcet/easycarrent/desktop/view/maintenance-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -207,6 +209,8 @@ class AppResourcesTest {
 				"rentals-view.fxml must not use inline style attributes");
 		assertFalse(readResource(PAYMENTS_FXML).contains("style=\""),
 				"payments-view.fxml must not use inline style attributes");
+		assertFalse(readResource(MAINTENANCE_FXML).contains("style=\""),
+				"maintenance-view.fxml must not use inline style attributes");
 	}
 
 	@Test
@@ -552,6 +556,125 @@ class AppResourcesTest {
 				".payment-editor-title", ".payment-form-field", ".payment-validation-messages",
 				".payment-validation-message", ".payment-state-label", ".payment-amount-column",
 				".payment-read-only-notice"}) {
+			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
+		}
+	}
+
+	@Test
+	void maintenanceFxmlExistsAndIsWellFormed() throws Exception {
+		assertNotNull(resource(MAINTENANCE_FXML),
+				"maintenance-view.fxml must exist on the test classpath");
+		try (InputStream in = stream(MAINTENANCE_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"maintenance-view.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void maintenanceFxmlDeclaresController() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.MaintenanceController\""),
+				"maintenance-view.fxml must declare MaintenanceController");
+	}
+
+	@Test
+	void maintenanceFxmlContainsTableAndColumns() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		assertTrue(fxml.contains("fx:id=\"maintenanceTable\""), "maintenanceTable required");
+		for (String column : new String[] {"idColumn", "vehicleColumn", "descriptionColumn",
+				"startDateColumn", "endDateColumn", "costColumn", "statusColumn"}) {
+			assertTrue(fxml.contains("fx:id=\"" + column + "\""), column + " required");
+		}
+	}
+
+	@Test
+	void maintenanceFxmlContainsSupportedActionControls() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		for (String id : new String[] {"refreshButton", "addButton", "startButton",
+				"completeButton", "deleteButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void maintenanceFxmlHasNoUnsupportedActionControls() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		// The backend exposes no maintenance update or cancel, and no supplier/parts/
+		// work-order operations, so no such control exists.
+		for (String id : new String[] {"editButton", "cancelMaintenanceButton", "supplierButton",
+				"partsButton", "workOrderButton", "invoiceButton"}) {
+			assertFalse(fxml.contains("fx:id=\"" + id + "\""), id + " must not exist");
+		}
+	}
+
+	@Test
+	void maintenanceFxmlContainsStateControls() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		for (String id : new String[] {"loadingIndicator", "statusMessageLabel", "emptyStateLabel",
+				"readOnlyNoticeLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void maintenanceFxmlContainsEditorControls() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		for (String id : new String[] {"vehicleComboBox", "descriptionArea", "startDatePicker",
+				"endDatePicker", "costField", "formMessagesContainer", "saveButton", "cancelEditButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void maintenanceFxmlUsesAComboBoxForVehicleAndWrapsDescription() throws Exception {
+		String vehicleLine = lineContaining(MAINTENANCE_FXML, "fx:id=\"vehicleComboBox\"");
+		assertTrue(vehicleLine.contains("<ComboBox"), "the vehicle selector must be a ComboBox");
+		assertFalse(vehicleLine.contains("editable=\"true\""),
+				"the vehicle ComboBox must not be free-text editable");
+		assertTrue(lineContaining(MAINTENANCE_FXML, "fx:id=\"descriptionArea\"")
+				.contains("wrapText=\"true\""), "the description must wrap");
+	}
+
+	@Test
+	void maintenanceFxmlDoesNotExposeServerManagedFields() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		// The status is backend-managed; there must be no editable status control.
+		assertFalse(fxml.contains("fx:id=\"statusComboBox\""), "status must not be editable");
+		assertFalse(fxml.contains("fx:id=\"statusField\""), "status must not be editable");
+	}
+
+	@Test
+	void maintenanceFxmlHasNoPasswordSupplierPartsOrStaticData() throws Exception {
+		String fxml = readResource(MAINTENANCE_FXML);
+		assertFalse(fxml.contains("<PasswordField"),
+				"maintenance-view.fxml must not contain a password field");
+		assertFalse(fxml.toLowerCase().contains("supplier"), "no supplier controls");
+		assertFalse(fxml.toLowerCase().contains("invoice"), "no invoice controls");
+		assertFalse(fxml.contains("<items>"), "the maintenance table must not define hardcoded rows");
+	}
+
+	@Test
+	void maintenanceStatusLabelWraps() throws Exception {
+		assertTrue(lineContaining(MAINTENANCE_FXML, "fx:id=\"statusMessageLabel\"")
+				.contains("wrapText=\"true\""),
+				"the status label must wrap so long messages are readable");
+	}
+
+	@Test
+	void appStylesheetContainsMaintenanceClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		for (String cssClass : new String[] {
+				".maintenance-view", ".maintenance-header", ".maintenance-toolbar",
+				".maintenance-table", ".maintenance-empty-state", ".maintenance-loading",
+				".maintenance-status-message", ".maintenance-status-success",
+				".maintenance-status-error", ".maintenance-editor", ".maintenance-editor-title",
+				".maintenance-form-field", ".maintenance-validation-messages",
+				".maintenance-validation-message", ".maintenance-state-label",
+				".maintenance-cost-column", ".maintenance-description-column",
+				".maintenance-read-only-notice"}) {
 			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
 		}
 	}

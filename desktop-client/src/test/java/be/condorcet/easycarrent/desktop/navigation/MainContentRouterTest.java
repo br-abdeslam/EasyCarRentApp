@@ -50,6 +50,12 @@ class MainContentRouterTest {
 	}
 
 	@Test
+	void maintenanceResourcePathIsCorrect() {
+		assertNotNull(MainContentRouter.class.getResource(MainContentRouter.MAINTENANCE_FXML),
+				"maintenance-view.fxml must be on the classpath at the router's path");
+	}
+
+	@Test
 	void implementedSectionsMapToTheirOwnView() {
 		assertEquals(MainContentRouter.VEHICLE_CATEGORIES_FXML,
 				MainContentRouter.resourceFor(MainSection.VEHICLE_CATEGORIES));
@@ -61,14 +67,16 @@ class MainContentRouterTest {
 				MainContentRouter.resourceFor(MainSection.RENTALS));
 		assertEquals(MainContentRouter.PAYMENTS_FXML,
 				MainContentRouter.resourceFor(MainSection.PAYMENTS));
+		assertEquals(MainContentRouter.MAINTENANCE_FXML,
+				MainContentRouter.resourceFor(MainSection.MAINTENANCE));
 	}
 
 	@Test
-	void unfinishedSectionsMapToThePlaceholder() {
+	void onlyDashboardMapsToThePlaceholder() {
 		for (MainSection section : MainSection.values()) {
 			if (section == MainSection.VEHICLE_CATEGORIES || section == MainSection.VEHICLES
 					|| section == MainSection.CUSTOMERS || section == MainSection.RENTALS
-					|| section == MainSection.PAYMENTS) {
+					|| section == MainSection.PAYMENTS || section == MainSection.MAINTENANCE) {
 				continue;
 			}
 			assertEquals(MainContentRouter.PLACEHOLDER_FXML,

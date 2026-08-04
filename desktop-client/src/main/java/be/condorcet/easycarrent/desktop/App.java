@@ -4,6 +4,7 @@ import be.condorcet.easycarrent.desktop.config.ApiConfiguration;
 import be.condorcet.easycarrent.desktop.http.ApiClient;
 import be.condorcet.easycarrent.desktop.service.AuthenticationService;
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.MaintenanceService;
 import be.condorcet.easycarrent.desktop.service.PaymentService;
 import be.condorcet.easycarrent.desktop.service.RentalService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
@@ -38,9 +39,11 @@ public class App extends Application {
 		CustomerService customerService = new CustomerService(apiClient, sessionManager);
 		RentalService rentalService = new RentalService(apiClient, sessionManager);
 		PaymentService paymentService = new PaymentService(apiClient, sessionManager);
+		MaintenanceService maintenanceService = new MaintenanceService(apiClient, sessionManager);
 
 		ViewManager viewManager = new ViewManager(stage, authenticationService, sessionManager,
-				vehicleCategoryService, vehicleService, customerService, rentalService, paymentService);
+				vehicleCategoryService, vehicleService, customerService, rentalService, paymentService,
+				maintenanceService);
 		viewManager.start();
 	}
 

@@ -690,3 +690,95 @@
 	-fx-text-fill: #8a1c1c;
 	-fx-font-weight: bold;
 }
+
+/* Maintenance screen (reuses the shared button, form, and read-only styles) */
+.maintenance-view {
+	-fx-background-color: #ffffff;
+}
+
+.maintenance-header {
+	-fx-padding: 0 0 4 0;
+}
+
+.maintenance-toolbar {
+	-fx-padding: 0 0 4 0;
+}
+
+.maintenance-table {
+	-fx-font-size: 13px;
+}
+
+.maintenance-empty-state {
+	-fx-font-size: 15px;
+	-fx-text-fill: #7b8794;
+	-fx-padding: 24;
+}
+
+.maintenance-loading {
+	-fx-progress-color: #2b6cb0;
+}
+
+.maintenance-status-message {
+	-fx-font-size: 13px;
+	-fx-text-fill: #52606d;
+}
+
+.maintenance-status-success {
+	-fx-text-fill: #10643b;
+	-fx-font-weight: bold;
+}
+
+.maintenance-status-error {
+	-fx-text-fill: #8a1c1c;
+	-fx-font-weight: bold;
+}
+
+.maintenance-editor {
+	-fx-background-color: #f4f6f9;
+	-fx-background-radius: 10;
+	-fx-border-color: #dbe0e6;
+	-fx-border-radius: 10;
+	-fx-padding: 16;
+}
+
+.maintenance-editor-title {
+	-fx-font-size: 18px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2933;
+}
+
+.maintenance-form-field {
+	-fx-font-size: 13px;
+}
+
+.maintenance-state-label {
+	-fx-font-size: 13px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #3c4a5a;
+}
+
+.maintenance-cost-column {
+	-fx-alignment: center-right;
+}
+
+.maintenance-description-column {
+	-fx-alignment: center-left;
+}
+
+.maintenance-read-only-notice {
+	-fx-font-size: 12px;
+	-fx-text-fill: #62543b;
+	-fx-background-color: #fdf3d8;
+	-fx-background-radius: 8;
+	-fx-padding: 4 10 4 10;
+}
+
+.maintenance-validation-messages {
+	-fx-spacing: 4;
+}
+
+.maintenance-validation-message {
+	-fx-font-size: 12px;
+	-fx-text-fill: #8a1c1c;
+	-fx-font-weight: bold;
+}

@@ -1,11 +1,13 @@
 package be.condorcet.easycarrent.desktop.navigation;
 
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.PaymentService;
 import be.condorcet.easycarrent.desktop.service.RentalService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.service.VehicleService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 import be.condorcet.easycarrent.desktop.view.CustomerController;
+import be.condorcet.easycarrent.desktop.view.PaymentController;
 import be.condorcet.easycarrent.desktop.view.RentalController;
 import be.condorcet.easycarrent.desktop.view.SectionPlaceholderController;
 import be.condorcet.easycarrent.desktop.view.VehicleCategoryController;
@@ -24,8 +26,9 @@ import javafx.scene.layout.StackPane;
  *
  * <p>Given the shell's central {@link StackPane}, it loads the section's view and
  * replaces the host's content with the new node. Implemented sections load their
- * own view (Vehicle Categories, Vehicles, and Customers each load their FXML);
- * unfinished sections load the reusable {@code section-placeholder.fxml}. It
+ * own view (Vehicle Categories, Vehicles, Customers, Rentals, and Payments each
+ * load their FXML); unfinished sections load the reusable
+ * {@code section-placeholder.fxml}. It
  * tracks the current section through a {@link NavigationState} and defaults to
  * {@link MainSection#DASHBOARD}. It injects the shared domain service into a
  * loaded domain controller but performs no API operations itself. It owns no
@@ -44,19 +47,22 @@ public final class MainContentRouter {
 			"/be/condorcet/easycarrent/desktop/view/customers-view.fxml";
 	static final String RENTALS_FXML =
 			"/be/condorcet/easycarrent/desktop/view/rentals-view.fxml";
+	static final String PAYMENTS_FXML =
+			"/be/condorcet/easycarrent/desktop/view/payments-view.fxml";
 
 	private final StackPane contentHost;
 	private final VehicleCategoryService vehicleCategoryService;
 	private final VehicleService vehicleService;
 	private final CustomerService customerService;
 	private final RentalService rentalService;
+	private final PaymentService paymentService;
 	private final SessionManager sessionManager;
 	private final NavigationState state = new NavigationState();
 
 	public MainContentRouter(StackPane contentHost,
 			VehicleCategoryService vehicleCategoryService, VehicleService vehicleService,
 			CustomerService customerService, RentalService rentalService,
-			SessionManager sessionManager) {
+			PaymentService paymentService, SessionManager sessionManager) {
 		this.contentHost = Objects.requireNonNull(contentHost, "contentHost must not be null");
 		this.vehicleCategoryService =
 				Objects.requireNonNull(vehicleCategoryService, "vehicleCategoryService must not be null");
@@ -66,6 +72,8 @@ public final class MainContentRouter {
 				Objects.requireNonNull(customerService, "customerService must not be null");
 		this.rentalService =
 				Objects.requireNonNull(rentalService, "rentalService must not be null");
+		this.paymentService =
+				Objects.requireNonNull(paymentService, "paymentService must not be null");
 		this.sessionManager = Objects.requireNonNull(sessionManager, "sessionManager must not be null");
 	}
 
@@ -97,6 +105,7 @@ public final class MainContentRouter {
 			case VEHICLES -> VEHICLES_FXML;
 			case CUSTOMERS -> CUSTOMERS_FXML;
 			case RENTALS -> RENTALS_FXML;
+			case PAYMENTS -> PAYMENTS_FXML;
 			default -> PLACEHOLDER_FXML;
 		};
 	}
@@ -122,6 +131,10 @@ public final class MainContentRouter {
 			case RENTALS -> {
 				RentalController controller = loader.getController();
 				controller.init(rentalService, customerService, vehicleService, sessionManager);
+			}
+			case PAYMENTS -> {
+				PaymentController controller = loader.getController();
+				controller.init(paymentService, rentalService, sessionManager);
 			}
 			default -> {
 				SectionPlaceholderController controller = loader.getController();

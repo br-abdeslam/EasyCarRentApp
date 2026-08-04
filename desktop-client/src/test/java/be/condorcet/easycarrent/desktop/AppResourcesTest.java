@@ -34,6 +34,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/customers-view.fxml";
 	private static final String RENTALS_FXML =
 			"/be/condorcet/easycarrent/desktop/view/rentals-view.fxml";
+	private static final String PAYMENTS_FXML =
+			"/be/condorcet/easycarrent/desktop/view/payments-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -203,6 +205,8 @@ class AppResourcesTest {
 				"customers-view.fxml must not use inline style attributes");
 		assertFalse(readResource(RENTALS_FXML).contains("style=\""),
 				"rentals-view.fxml must not use inline style attributes");
+		assertFalse(readResource(PAYMENTS_FXML).contains("style=\""),
+				"payments-view.fxml must not use inline style attributes");
 	}
 
 	@Test
@@ -429,6 +433,125 @@ class AppResourcesTest {
 				".rental-status-success", ".rental-status-error", ".rental-editor",
 				".rental-editor-title", ".rental-form-field", ".rental-validation-messages",
 				".rental-validation-message", ".rental-state-label", ".rental-price-column"}) {
+			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
+		}
+	}
+
+	@Test
+	void paymentsFxmlExistsAndIsWellFormed() throws Exception {
+		assertNotNull(resource(PAYMENTS_FXML),
+				"payments-view.fxml must exist on the test classpath");
+		try (InputStream in = stream(PAYMENTS_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"payments-view.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void paymentsFxmlDeclaresController() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.PaymentController\""),
+				"payments-view.fxml must declare PaymentController");
+	}
+
+	@Test
+	void paymentsFxmlContainsTableAndColumns() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		assertTrue(fxml.contains("fx:id=\"paymentTable\""), "paymentTable required");
+		for (String column : new String[] {"idColumn", "rentalColumn", "amountColumn", "methodColumn",
+				"statusColumn", "createdAtColumn", "paidAtColumn"}) {
+			assertTrue(fxml.contains("fx:id=\"" + column + "\""), column + " required");
+		}
+	}
+
+	@Test
+	void paymentsFxmlContainsSupportedActionControls() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		for (String id : new String[] {"refreshButton", "addButton", "markPaidButton",
+				"markFailedButton", "retryButton", "refundButton", "deleteButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void paymentsFxmlHasNoUnsupportedActionControls() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		// The backend exposes no payment update, invoice, or receipt operations.
+		for (String id : new String[] {"editButton", "invoiceButton", "receiptButton",
+				"printButton", "gatewayButton"}) {
+			assertFalse(fxml.contains("fx:id=\"" + id + "\""), id + " must not exist");
+		}
+	}
+
+	@Test
+	void paymentsFxmlContainsStateControls() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		for (String id : new String[] {"loadingIndicator", "statusMessageLabel", "emptyStateLabel",
+				"readOnlyNoticeLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void paymentsFxmlContainsEditorControls() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		for (String id : new String[] {"rentalComboBox", "paymentMethodComboBox",
+				"formMessagesContainer", "saveButton", "cancelEditButton"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void paymentsFxmlUsesComboBoxesForRentalAndMethod() throws Exception {
+		String rentalLine = lineContaining(PAYMENTS_FXML, "fx:id=\"rentalComboBox\"");
+		String methodLine = lineContaining(PAYMENTS_FXML, "fx:id=\"paymentMethodComboBox\"");
+		assertTrue(rentalLine.contains("<ComboBox"), "the rental selector must be a ComboBox");
+		assertTrue(methodLine.contains("<ComboBox"), "the method selector must be a ComboBox");
+		assertFalse(rentalLine.contains("editable=\"true\""),
+				"the rental ComboBox must not be free-text editable");
+		assertFalse(methodLine.contains("editable=\"true\""),
+				"the method ComboBox must not be free-text editable");
+	}
+
+	@Test
+	void paymentsFxmlDoesNotExposeServerManagedFields() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		// Amount, status, and dates are backend-managed; there must be no editable field.
+		assertFalse(fxml.contains("fx:id=\"amountField\""), "amount must not be editable");
+		assertFalse(fxml.contains("fx:id=\"statusComboBox\""), "status must not be editable");
+		assertFalse(fxml.contains("fx:id=\"paymentDatePicker\""), "payment date must not be an input");
+		assertFalse(fxml.contains("<DatePicker"), "the editor must not offer any date input");
+	}
+
+	@Test
+	void paymentsFxmlHasNoPasswordInvoiceReceiptOrStaticData() throws Exception {
+		String fxml = readResource(PAYMENTS_FXML);
+		assertFalse(fxml.contains("<PasswordField"), "payments-view.fxml must not contain a password field");
+		assertFalse(fxml.toLowerCase().contains("invoice"), "payments-view.fxml must not contain invoice controls");
+		assertFalse(fxml.toLowerCase().contains("receipt"), "payments-view.fxml must not contain receipt controls");
+		assertFalse(fxml.contains("<items>"), "the payment table must not define hardcoded rows");
+	}
+
+	@Test
+	void paymentsStatusLabelWraps() throws Exception {
+		assertTrue(lineContaining(PAYMENTS_FXML, "fx:id=\"statusMessageLabel\"")
+				.contains("wrapText=\"true\""),
+				"the status label must wrap so long messages are readable");
+	}
+
+	@Test
+	void appStylesheetContainsPaymentClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		for (String cssClass : new String[] {
+				".payment-view", ".payment-header", ".payment-toolbar", ".payment-table",
+				".payment-empty-state", ".payment-loading", ".payment-status-message",
+				".payment-status-success", ".payment-status-error", ".payment-editor",
+				".payment-editor-title", ".payment-form-field", ".payment-validation-messages",
+				".payment-validation-message", ".payment-state-label", ".payment-amount-column",
+				".payment-read-only-notice"}) {
 			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
 		}
 	}

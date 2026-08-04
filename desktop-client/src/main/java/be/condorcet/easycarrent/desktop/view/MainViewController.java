@@ -8,6 +8,7 @@ import be.condorcet.easycarrent.desktop.navigation.MainSection;
 import be.condorcet.easycarrent.desktop.service.BackendHealthResult;
 import be.condorcet.easycarrent.desktop.service.BackendHealthService;
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.PaymentService;
 import be.condorcet.easycarrent.desktop.service.RentalService;
 import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.service.VehicleService;
@@ -93,6 +94,7 @@ public class MainViewController {
 	private VehicleService vehicleService;
 	private CustomerService customerService;
 	private RentalService rentalService;
+	private PaymentService paymentService;
 
 	public MainViewController() {
 		this.backendHealthService =
@@ -102,13 +104,15 @@ public class MainViewController {
 	/** Supplies collaborators after {@code FXMLLoader.load()} and builds navigation. */
 	public void init(SessionManager sessionManager, ViewManager viewManager,
 			VehicleCategoryService vehicleCategoryService, VehicleService vehicleService,
-			CustomerService customerService, RentalService rentalService) {
+			CustomerService customerService, RentalService rentalService,
+			PaymentService paymentService) {
 		this.sessionManager = sessionManager;
 		this.viewManager = viewManager;
 		this.vehicleCategoryService = vehicleCategoryService;
 		this.vehicleService = vehicleService;
 		this.customerService = customerService;
 		this.rentalService = rentalService;
+		this.paymentService = paymentService;
 		renderSession();
 		setUpNavigation();
 	}
@@ -122,7 +126,7 @@ public class MainViewController {
 
 	private void setUpNavigation() {
 		contentRouter = new MainContentRouter(contentHost, vehicleCategoryService, vehicleService,
-				customerService, rentalService, sessionManager);
+				customerService, rentalService, paymentService, sessionManager);
 
 		wireNavigation(dashboardNavigationButton, MainSection.DASHBOARD);
 		wireNavigation(vehicleCategoriesNavigationButton, MainSection.VEHICLE_CATEGORIES);

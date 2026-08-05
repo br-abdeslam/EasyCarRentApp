@@ -10,15 +10,15 @@ module is a standalone Maven project, independent from the backend.
 ## Current scope
 
 The client has an MVC/FXML/CSS architecture, a reusable non-blocking HTTP and
-JSON foundation, a login workflow, the authenticated application shell, and six
-backend-connected domain screens (**Vehicle Categories**, **Vehicles**,
-**Customers**, **Rentals**, **Payments**, and **Maintenance**). It starts on a
-login screen, authenticates against the backend using HTTP Basic, keeps the session
-in memory, and then shows the main shell: a persistent header (username, role,
-logout), a sidebar to navigate between sections, and a routed central content area.
-**Vehicle Categories**, **Vehicles**, **Customers**, **Rentals**, **Payments**, and
-**Maintenance** are real screens backed by the API; only **Dashboard** remains a
-routed **placeholder** view.
+JSON foundation, a login workflow, the authenticated application shell, a read-only
+**Dashboard**, and six backend-connected domain screens (**Vehicle Categories**,
+**Vehicles**, **Customers**, **Rentals**, **Payments**, and **Maintenance**). It
+starts on a login screen, authenticates against the backend using HTTP Basic, keeps
+the session in memory, and then shows the main shell: a persistent header (username,
+role, logout), a sidebar to navigate between sections, and a routed central content
+area. All seven sections — **Dashboard**, **Vehicle Categories**, **Vehicles**,
+**Customers**, **Rentals**, **Payments**, and **Maintenance** — are real views
+backed by the API; there is no remaining placeholder.
 
 ## Main application shell
 
@@ -32,10 +32,46 @@ routed **placeholder** view.
   write permissions are enforced by the backend and future screens).
 - **Routing** — clicking a section replaces only the central content; the header
   and sidebar stay in place and no new window is opened. **Dashboard** is selected
-  by default, and exactly one section stays selected. **Vehicle Categories**,
-  **Vehicles**, **Customers**, **Rentals**, **Payments**, and **Maintenance** load
-  their real views; **Dashboard** loads a placeholder that states it is prepared for
-  future functionality.
+  by default, and exactly one section stays selected. Every section — **Dashboard**,
+  **Vehicle Categories**, **Vehicles**, **Customers**, **Rentals**, **Payments**,
+  and **Maintenance** — loads its own real view.
+
+## Dashboard
+
+The Dashboard is a read-only overview built from the existing backend APIs (no
+Dashboard endpoint exists, and none was added); it opens automatically as the
+default section inside the central content area (header and sidebar stay visible).
+
+- **Concurrent, asynchronous load** — on open and on each manual **Refresh**, the
+  Dashboard loads the six domain lists (`/api/categories`, `/api/vehicles`,
+  `/api/customers`, `/api/rentals`, `/api/payments`, `/api/maintenance-records`)
+  concurrently through the existing services and aggregates them; the JavaFX
+  Application Thread is never blocked, and Refresh is disabled while a load runs.
+- **Headline metrics** — vehicle categories, vehicles, available vehicles (vehicles
+  whose status is `AVAILABLE`), customers, active rentals (rentals whose status is
+  `ACTIVE`), pending payments (payments whose status is `PENDING`), and maintenance
+  in progress (records whose status is `IN_PROGRESS`).
+- **Exact status breakdowns** — vehicles, rentals, payments, and maintenance are
+  each broken down by their exact backend status, and every status is shown
+  including a zero count. Statuses are never inferred from dates, and vehicle
+  availability is never inferred from rentals; each record is counted once by the
+  status its DTO reports.
+- **Payment amount summaries** — the total amount of `PAID`, `PENDING`, and
+  `REFUNDED` payments, each summed with `BigDecimal` and labelled precisely (they
+  are not labelled revenue, turnover, balance, or income, and refunds are not
+  subtracted into a net figure). `FAILED` payments contribute to no amount.
+- **Partial-failure handling** — one failing endpoint never hides the working
+  sections: a failed section is shown as **Unavailable** (distinct from a zero
+  count), a single concise partial-data notice is shown, and Refresh stays enabled.
+  A refresh that is not fully successful preserves the previously loaded data and its
+  last-updated time and states that the refresh was incomplete; a later full refresh
+  replaces the data and clears the notice.
+- **Last updated** — the client refresh time is shown (local time, not server time)
+  and only advances after a fully successful load.
+- **Read-only and private** — the only control is Refresh; there are no create,
+  edit, delete, or lifecycle actions, and no customer names, emails, phone numbers,
+  licence numbers, or addresses are displayed. Monetary values use `BigDecimal` and
+  no currency symbol is added because the contract declares none.
 
 ## Customers
 
@@ -366,6 +402,9 @@ desktop-client/
     │   │       ├── service/{PaymentService, PaymentValidator, PaymentMessages, PaymentFormatter}.java
     │   │       ├── service/{MaintenanceService, MaintenanceValidator, MaintenanceMessages,
     │   │       │            MaintenanceFormatter}.java
+    │   │       ├── service/{DashboardService, DashboardFormatter}.java
+    │   │       ├── dashboard/{DashboardSnapshot, DashboardAggregator,
+    │   │       │             DashboardSectionResult, DashboardLoadResult}.java
     │   │       ├── session/{SessionManager, UserSession}.java
     │   │       └── view/{ViewManager, LoginController, MainViewController,
     │   │       │         SectionPlaceholderController, VehicleCategoryController,
@@ -373,12 +412,14 @@ desktop-client/
     │   │       │         CustomerController, CustomerViewState, CustomerMessageState,
     │   │       │         RentalController, RentalViewState, RentalMessageState,
     │   │       │         PaymentController, PaymentViewState, PaymentMessageState,
-    │   │       │         MaintenanceController, MaintenanceViewState, MaintenanceMessageState}.java
+    │   │       │         MaintenanceController, MaintenanceViewState, MaintenanceMessageState,
+    │   │       │         DashboardController, DashboardViewState}.java
     │   └── resources/be/condorcet/easycarrent/desktop/
     │       ├── config/desktop.properties
     │       └── view/{login-view.fxml, main-view.fxml, section-placeholder.fxml,
     │                 vehicle-categories-view.fxml, vehicles-view.fxml, customers-view.fxml,
-    │                 rentals-view.fxml, payments-view.fxml, maintenance-view.fxml, app.css}
+    │                 rentals-view.fxml, payments-view.fxml, maintenance-view.fxml,
+    │                 dashboard-view.fxml, app.css}
     └── test/
         └── java/be/condorcet/easycarrent/desktop/...
 ```
@@ -390,10 +431,11 @@ desktop-client/
 - **ViewManager** — authentication-level router that swaps between the login and
   main views only.
 - **MainContentRouter** — routes the central content of the main shell between
-  sections (loading `vehicle-categories-view.fxml` for Vehicle Categories,
-  `vehicles-view.fxml` for Vehicles, `customers-view.fxml` for Customers,
-  `rentals-view.fxml` for Rentals, `payments-view.fxml` for Payments,
-  `maintenance-view.fxml` for Maintenance, and the placeholder for Dashboard); it
+  sections (loading `dashboard-view.fxml` for Dashboard,
+  `vehicle-categories-view.fxml` for Vehicle Categories, `vehicles-view.fxml` for
+  Vehicles, `customers-view.fxml` for Customers, `rentals-view.fxml` for Rentals,
+  `payments-view.fxml` for Payments, and `maintenance-view.fxml` for Maintenance);
+  the reusable `section-placeholder.fxml` remains as a defensive fallback. It
   injects the shared domain services into each loaded controller but owns no Stage
   and performs no authentication or HTTP.
 - **MainSection / NavigationState** — the available sections and the current
@@ -497,6 +539,27 @@ desktop-client/
 - **MaintenanceResponseDto / MaintenanceRequestDto / MaintenanceStatus** —
   maintenance API contracts; the status is backend-managed and read-only in the
   client, and there is no maintenance type or mileage in the contract.
+- **DashboardService** — the read-only dashboard workflow: it depends on the six
+  domain services and loads their list operations concurrently into one
+  `DashboardLoadResult`, converting any technical failure into a safe unavailable
+  section (it performs no writes and never blocks).
+- **DashboardAggregator** — pure, JavaFX-free aggregation of the six lists into a
+  `DashboardSnapshot` (counts, exact per-status breakdowns with every enum constant,
+  and the `BigDecimal` payment-amount summaries); it counts each record once by its
+  DTO status and takes only a customer count (no personal data).
+- **DashboardSnapshot** — the immutable computed dashboard data, including per-section
+  availability so a preserved snapshot renders a failed section as unavailable rather
+  than zero.
+- **DashboardSectionResult / DashboardLoadResult** — the per-section and combined
+  load outcomes that keep a failed section distinct from an empty successful one.
+- **DashboardViewState** — pure, JavaFX-free dashboard state: duplicate-refresh
+  prevention and the first-load-versus-refresh policy (a partial or failed refresh
+  preserves the previous snapshot and its last-updated time).
+- **DashboardController / dashboard-view.fxml** — the read-only dashboard's UI events
+  and structure (metric cards, per-status breakdowns, payment totals, Refresh, and a
+  last-updated label), reusing `DashboardService` and the pure aggregator.
+- **DashboardFormatter** — JavaFX-free count, amount, and refresh-time formatting for
+  display, with a consistent "Unavailable" placeholder.
 - **ApiConfiguration** — loads and normalizes the backend base URL.
 - **ApiClient** — reusable asynchronous HTTP layer (anonymous and Basic-auth GET,
   and authenticated JSON list/POST/PUT/PATCH/DELETE).
@@ -555,12 +618,12 @@ A resizable window titled **Easy Car Rent**:
 - **Main shell** — after a successful login: a header with the application title,
   the authenticated username and role (**USER** or **ADMIN**), and a **Log out**
   button; a sidebar listing the seven sections; a central content area showing the
-  selected section's placeholder (**Dashboard** by default); and a status area
+  selected section (the read-only **Dashboard** by default); and a status area
   with the initialization message and the backend connectivity indicator
   (**Backend connected** / **Backend unavailable**). Clicking a section changes
   only the central content. **Log out** returns to the login screen.
 
 The window can be resized (the sidebar keeps a stable width and the content area
-grows) and closes normally. The **Vehicle Categories**, **Vehicles**,
-**Customers**, **Rentals**, **Payments**, and **Maintenance** sections show real
-backend-connected tables and editors; only **Dashboard** remains a placeholder.
+grows) and closes normally. All seven sections show real backend-connected views:
+the read-only **Dashboard** overview and the **Vehicle Categories**, **Vehicles**,
+**Customers**, **Rentals**, **Payments**, and **Maintenance** management screens.

@@ -38,6 +38,8 @@ class AppResourcesTest {
 			"/be/condorcet/easycarrent/desktop/view/payments-view.fxml";
 	private static final String MAINTENANCE_FXML =
 			"/be/condorcet/easycarrent/desktop/view/maintenance-view.fxml";
+	private static final String DASHBOARD_FXML =
+			"/be/condorcet/easycarrent/desktop/view/dashboard-view.fxml";
 	private static final String APP_STYLESHEET =
 			"/be/condorcet/easycarrent/desktop/view/app.css";
 	private static final String DESKTOP_PROPERTIES =
@@ -211,6 +213,8 @@ class AppResourcesTest {
 				"payments-view.fxml must not use inline style attributes");
 		assertFalse(readResource(MAINTENANCE_FXML).contains("style=\""),
 				"maintenance-view.fxml must not use inline style attributes");
+		assertFalse(readResource(DASHBOARD_FXML).contains("style=\""),
+				"dashboard-view.fxml must not use inline style attributes");
 	}
 
 	@Test
@@ -675,6 +679,117 @@ class AppResourcesTest {
 				".maintenance-validation-message", ".maintenance-state-label",
 				".maintenance-cost-column", ".maintenance-description-column",
 				".maintenance-read-only-notice"}) {
+			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
+		}
+	}
+
+	@Test
+	void dashboardFxmlExistsAndIsWellFormed() throws Exception {
+		assertNotNull(resource(DASHBOARD_FXML),
+				"dashboard-view.fxml must exist on the test classpath");
+		try (InputStream in = stream(DASHBOARD_FXML)) {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			Document document = factory.newDocumentBuilder().parse(in);
+			assertNotNull(document.getDocumentElement(),
+					"dashboard-view.fxml must parse into a valid XML document");
+		}
+	}
+
+	@Test
+	void dashboardFxmlDeclaresController() throws Exception {
+		String fxml = readResource(DASHBOARD_FXML);
+		assertTrue(fxml.contains(
+				"fx:controller=\"be.condorcet.easycarrent.desktop.view.DashboardController\""),
+				"dashboard-view.fxml must declare DashboardController");
+	}
+
+	@Test
+	void dashboardFxmlContainsGeneralStateControls() throws Exception {
+		String fxml = readResource(DASHBOARD_FXML);
+		for (String id : new String[] {"refreshButton", "loadingIndicator", "statusMessageLabel",
+				"lastUpdatedLabel", "unavailableLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void dashboardFxmlContainsEveryHeadlineMetricLabel() throws Exception {
+		String fxml = readResource(DASHBOARD_FXML);
+		for (String id : new String[] {"vehicleCategoryCountLabel", "vehicleCountLabel",
+				"availableVehicleCountLabel", "customerCountLabel", "activeRentalCountLabel",
+				"pendingPaymentCountLabel", "maintenanceInProgressCountLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void dashboardFxmlContainsEveryStatusContainer() throws Exception {
+		String fxml = readResource(DASHBOARD_FXML);
+		for (String id : new String[] {"vehicleStatusContainer", "rentalStatusContainer",
+				"paymentStatusContainer", "maintenanceStatusContainer"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void dashboardFxmlContainsPaymentAmountLabels() throws Exception {
+		String fxml = readResource(DASHBOARD_FXML);
+		for (String id : new String[] {"paidPaymentAmountLabel", "pendingPaymentAmountLabel",
+				"refundedPaymentAmountLabel"}) {
+			assertTrue(fxml.contains("fx:id=\"" + id + "\""), id + " required");
+		}
+	}
+
+	@Test
+	void dashboardFxmlHasNoWriteControls() throws Exception {
+		String fxml = readResource(DASHBOARD_FXML);
+		// The only interactive control is Refresh; there is no CRUD from the dashboard.
+		for (String id : new String[] {"addButton", "editButton", "deleteButton", "saveButton",
+				"cancelEditButton", "startButton", "completeButton"}) {
+			assertFalse(fxml.contains("fx:id=\"" + id + "\""), id + " must not exist on the dashboard");
+		}
+	}
+
+	@Test
+	void dashboardFxmlHasNoEditableInputsOrPersonalData() throws Exception {
+		String fxml = readResource(DASHBOARD_FXML);
+		assertFalse(fxml.contains("<TextField"), "the dashboard must have no editable text field");
+		assertFalse(fxml.contains("<TextArea"), "the dashboard must have no editable text area");
+		assertFalse(fxml.contains("<PasswordField"), "the dashboard must have no password field");
+		assertFalse(fxml.contains("<TableView"), "the dashboard shows aggregates, not record tables");
+		String lower = fxml.toLowerCase();
+		assertFalse(lower.contains("email"), "no customer email on the dashboard");
+		assertFalse(lower.contains("phone"), "no customer phone on the dashboard");
+		assertFalse(lower.contains("licence") || lower.contains("license"),
+				"no customer licence on the dashboard");
+		assertFalse(lower.contains("address"), "no customer address on the dashboard");
+	}
+
+	@Test
+	void dashboardFxmlUsesPlaceholderTextNotHardcodedMetrics() throws Exception {
+		// Metric values start as the neutral placeholder, reset by the controller after load.
+		assertTrue(lineContaining(DASHBOARD_FXML, "fx:id=\"vehicleCountLabel\"").contains("text=\"—\""),
+				"metric values must use the neutral placeholder, not hardcoded business numbers");
+	}
+
+	@Test
+	void dashboardStatusLabelWraps() throws Exception {
+		assertTrue(lineContaining(DASHBOARD_FXML, "fx:id=\"statusMessageLabel\"")
+				.contains("wrapText=\"true\""),
+				"the status label must wrap so long messages are readable");
+	}
+
+	@Test
+	void appStylesheetContainsDashboardClasses() throws Exception {
+		String css = readResource(APP_STYLESHEET);
+		for (String cssClass : new String[] {
+				".dashboard-view", ".dashboard-header", ".dashboard-toolbar", ".dashboard-last-updated",
+				".dashboard-loading", ".dashboard-status-message", ".dashboard-status-error",
+				".dashboard-status-warning", ".dashboard-metric-grid", ".dashboard-metric-card",
+				".dashboard-metric-title", ".dashboard-metric-value", ".dashboard-metric-unavailable",
+				".dashboard-section", ".dashboard-section-title", ".dashboard-status-grid",
+				".dashboard-status-item", ".dashboard-status-name", ".dashboard-status-value",
+				".dashboard-payment-total", ".dashboard-unavailable"}) {
 			assertTrue(css.contains(cssClass), "app.css must define " + cssClass);
 		}
 	}

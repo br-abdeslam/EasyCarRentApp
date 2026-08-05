@@ -782,3 +782,117 @@
 	-fx-text-fill: #8a1c1c;
 	-fx-font-weight: bold;
 }
+
+/* Dashboard screen (read-only overview; reuses shared button styles) */
+.dashboard-view {
+	-fx-background-color: #ffffff;
+}
+
+.dashboard-view > .viewport {
+	-fx-background-color: #ffffff;
+}
+
+.dashboard-header {
+	-fx-padding: 0 0 4 0;
+}
+
+.dashboard-toolbar {
+	-fx-padding: 0 0 4 0;
+}
+
+.dashboard-last-updated {
+	-fx-font-size: 12px;
+	-fx-text-fill: #7b8794;
+}
+
+.dashboard-loading {
+	-fx-progress-color: #2b6cb0;
+}
+
+.dashboard-status-message {
+	-fx-font-size: 13px;
+	-fx-text-fill: #52606d;
+}
+
+.dashboard-status-warning {
+	-fx-text-fill: #8a5a00;
+	-fx-font-weight: bold;
+}
+
+.dashboard-status-error {
+	-fx-text-fill: #8a1c1c;
+	-fx-font-weight: bold;
+}
+
+.dashboard-metric-grid {
+	-fx-padding: 4 0 4 0;
+}
+
+.dashboard-metric-card {
+	-fx-background-color: #f4f6f9;
+	-fx-background-radius: 10;
+	-fx-border-color: #dbe0e6;
+	-fx-border-radius: 10;
+	-fx-padding: 14 18 14 18;
+	-fx-min-width: 150px;
+}
+
+.dashboard-metric-title {
+	-fx-font-size: 12px;
+	-fx-text-fill: #52606d;
+}
+
+.dashboard-metric-value {
+	-fx-font-size: 26px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2933;
+}
+
+.dashboard-metric-unavailable {
+	-fx-font-size: 14px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #8a5a00;
+}
+
+.dashboard-section {
+	-fx-background-color: #ffffff;
+	-fx-padding: 6 0 6 0;
+}
+
+.dashboard-section-title {
+	-fx-font-size: 16px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2933;
+}
+
+.dashboard-status-grid {
+	-fx-padding: 2 0 2 0;
+}
+
+.dashboard-status-item {
+	-fx-background-color: #eef1f5;
+	-fx-background-radius: 8;
+	-fx-padding: 4 12 4 12;
+}
+
+.dashboard-status-name {
+	-fx-font-size: 13px;
+	-fx-text-fill: #52606d;
+}
+
+.dashboard-status-value {
+	-fx-font-size: 13px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2933;
+}
+
+.dashboard-payment-total {
+	-fx-alignment: center-left;
+}
+
+.dashboard-unavailable {
+	-fx-font-size: 15px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #8a1c1c;
+	-fx-padding: 16;
+}

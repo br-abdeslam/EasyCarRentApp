@@ -1,6 +1,7 @@
 package be.condorcet.easycarrent.desktop.navigation;
 
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.DashboardService;
 import be.condorcet.easycarrent.desktop.service.MaintenanceService;
 import be.condorcet.easycarrent.desktop.service.PaymentService;
 import be.condorcet.easycarrent.desktop.service.RentalService;
@@ -8,6 +9,7 @@ import be.condorcet.easycarrent.desktop.service.VehicleCategoryService;
 import be.condorcet.easycarrent.desktop.service.VehicleService;
 import be.condorcet.easycarrent.desktop.session.SessionManager;
 import be.condorcet.easycarrent.desktop.view.CustomerController;
+import be.condorcet.easycarrent.desktop.view.DashboardController;
 import be.condorcet.easycarrent.desktop.view.MaintenanceController;
 import be.condorcet.easycarrent.desktop.view.PaymentController;
 import be.condorcet.easycarrent.desktop.view.RentalController;
@@ -27,10 +29,10 @@ import javafx.scene.layout.StackPane;
  * Routes the central content area of the main shell between sections.
  *
  * <p>Given the shell's central {@link StackPane}, it loads the section's view and
- * replaces the host's content with the new node. Implemented sections load their
- * own view (Vehicle Categories, Vehicles, Customers, Rentals, Payments, and
- * Maintenance each load their FXML); the remaining Dashboard section loads the
- * reusable {@code section-placeholder.fxml}. It
+ * replaces the host's content with the new node. Every section loads its own view
+ * (Dashboard, Vehicle Categories, Vehicles, Customers, Rentals, Payments, and
+ * Maintenance each load their FXML); the reusable {@code section-placeholder.fxml}
+ * remains available as a defensive fallback. It
  * tracks the current section through a {@link NavigationState} and defaults to
  * {@link MainSection#DASHBOARD}. It injects the shared domain service into a
  * loaded domain controller but performs no API operations itself. It owns no
@@ -53,6 +55,8 @@ public final class MainContentRouter {
 			"/be/condorcet/easycarrent/desktop/view/payments-view.fxml";
 	static final String MAINTENANCE_FXML =
 			"/be/condorcet/easycarrent/desktop/view/maintenance-view.fxml";
+	static final String DASHBOARD_FXML =
+			"/be/condorcet/easycarrent/desktop/view/dashboard-view.fxml";
 
 	private final StackPane contentHost;
 	private final VehicleCategoryService vehicleCategoryService;
@@ -61,6 +65,7 @@ public final class MainContentRouter {
 	private final RentalService rentalService;
 	private final PaymentService paymentService;
 	private final MaintenanceService maintenanceService;
+	private final DashboardService dashboardService;
 	private final SessionManager sessionManager;
 	private final NavigationState state = new NavigationState();
 
@@ -68,7 +73,7 @@ public final class MainContentRouter {
 			VehicleCategoryService vehicleCategoryService, VehicleService vehicleService,
 			CustomerService customerService, RentalService rentalService,
 			PaymentService paymentService, MaintenanceService maintenanceService,
-			SessionManager sessionManager) {
+			DashboardService dashboardService, SessionManager sessionManager) {
 		this.contentHost = Objects.requireNonNull(contentHost, "contentHost must not be null");
 		this.vehicleCategoryService =
 				Objects.requireNonNull(vehicleCategoryService, "vehicleCategoryService must not be null");
@@ -82,6 +87,8 @@ public final class MainContentRouter {
 				Objects.requireNonNull(paymentService, "paymentService must not be null");
 		this.maintenanceService =
 				Objects.requireNonNull(maintenanceService, "maintenanceService must not be null");
+		this.dashboardService =
+				Objects.requireNonNull(dashboardService, "dashboardService must not be null");
 		this.sessionManager = Objects.requireNonNull(sessionManager, "sessionManager must not be null");
 	}
 
@@ -109,13 +116,13 @@ public final class MainContentRouter {
 	/** @return the FXML resource path for the given section (pure mapping) */
 	static String resourceFor(MainSection section) {
 		return switch (section) {
+			case DASHBOARD -> DASHBOARD_FXML;
 			case VEHICLE_CATEGORIES -> VEHICLE_CATEGORIES_FXML;
 			case VEHICLES -> VEHICLES_FXML;
 			case CUSTOMERS -> CUSTOMERS_FXML;
 			case RENTALS -> RENTALS_FXML;
 			case PAYMENTS -> PAYMENTS_FXML;
 			case MAINTENANCE -> MAINTENANCE_FXML;
-			default -> PLACEHOLDER_FXML;
 		};
 	}
 
@@ -125,6 +132,10 @@ public final class MainContentRouter {
 		// Dependencies are injected only after loading, so any initial API load is
 		// started by the controller's init() here, not in its FXML initialize().
 		switch (section) {
+			case DASHBOARD -> {
+				DashboardController controller = loader.getController();
+				controller.init(dashboardService);
+			}
 			case VEHICLE_CATEGORIES -> {
 				VehicleCategoryController controller = loader.getController();
 				controller.init(vehicleCategoryService, sessionManager);

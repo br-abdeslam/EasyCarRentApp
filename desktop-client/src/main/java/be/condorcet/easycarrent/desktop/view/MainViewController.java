@@ -8,6 +8,7 @@ import be.condorcet.easycarrent.desktop.navigation.MainSection;
 import be.condorcet.easycarrent.desktop.service.BackendHealthResult;
 import be.condorcet.easycarrent.desktop.service.BackendHealthService;
 import be.condorcet.easycarrent.desktop.service.CustomerService;
+import be.condorcet.easycarrent.desktop.service.DashboardService;
 import be.condorcet.easycarrent.desktop.service.MaintenanceService;
 import be.condorcet.easycarrent.desktop.service.PaymentService;
 import be.condorcet.easycarrent.desktop.service.RentalService;
@@ -97,6 +98,7 @@ public class MainViewController {
 	private RentalService rentalService;
 	private PaymentService paymentService;
 	private MaintenanceService maintenanceService;
+	private DashboardService dashboardService;
 
 	public MainViewController() {
 		this.backendHealthService =
@@ -107,7 +109,8 @@ public class MainViewController {
 	public void init(SessionManager sessionManager, ViewManager viewManager,
 			VehicleCategoryService vehicleCategoryService, VehicleService vehicleService,
 			CustomerService customerService, RentalService rentalService,
-			PaymentService paymentService, MaintenanceService maintenanceService) {
+			PaymentService paymentService, MaintenanceService maintenanceService,
+			DashboardService dashboardService) {
 		this.sessionManager = sessionManager;
 		this.viewManager = viewManager;
 		this.vehicleCategoryService = vehicleCategoryService;
@@ -116,6 +119,7 @@ public class MainViewController {
 		this.rentalService = rentalService;
 		this.paymentService = paymentService;
 		this.maintenanceService = maintenanceService;
+		this.dashboardService = dashboardService;
 		renderSession();
 		setUpNavigation();
 	}
@@ -129,7 +133,8 @@ public class MainViewController {
 
 	private void setUpNavigation() {
 		contentRouter = new MainContentRouter(contentHost, vehicleCategoryService, vehicleService,
-				customerService, rentalService, paymentService, maintenanceService, sessionManager);
+				customerService, rentalService, paymentService, maintenanceService, dashboardService,
+				sessionManager);
 
 		wireNavigation(dashboardNavigationButton, MainSection.DASHBOARD);
 		wireNavigation(vehicleCategoriesNavigationButton, MainSection.VEHICLE_CATEGORIES);

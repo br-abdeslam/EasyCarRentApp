@@ -1,6 +1,7 @@
 package be.condorcet.easycarrent.desktop.navigation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,15 @@ class MainContentRouterTest {
 	}
 
 	@Test
-	void implementedSectionsMapToTheirOwnView() {
+	void dashboardResourcePathIsCorrect() {
+		assertNotNull(MainContentRouter.class.getResource(MainContentRouter.DASHBOARD_FXML),
+				"dashboard-view.fxml must be on the classpath at the router's path");
+	}
+
+	@Test
+	void everySectionMapsToItsOwnRealView() {
+		assertEquals(MainContentRouter.DASHBOARD_FXML,
+				MainContentRouter.resourceFor(MainSection.DASHBOARD));
 		assertEquals(MainContentRouter.VEHICLE_CATEGORIES_FXML,
 				MainContentRouter.resourceFor(MainSection.VEHICLE_CATEGORIES));
 		assertEquals(MainContentRouter.VEHICLES_FXML,
@@ -72,16 +81,11 @@ class MainContentRouterTest {
 	}
 
 	@Test
-	void onlyDashboardMapsToThePlaceholder() {
+	void noSectionMapsToThePlaceholder() {
 		for (MainSection section : MainSection.values()) {
-			if (section == MainSection.VEHICLE_CATEGORIES || section == MainSection.VEHICLES
-					|| section == MainSection.CUSTOMERS || section == MainSection.RENTALS
-					|| section == MainSection.PAYMENTS || section == MainSection.MAINTENANCE) {
-				continue;
-			}
-			assertEquals(MainContentRouter.PLACEHOLDER_FXML,
+			assertNotEquals(MainContentRouter.PLACEHOLDER_FXML,
 					MainContentRouter.resourceFor(section),
-					section + " must still use the placeholder view");
+					section + " must load its own real view, not the placeholder");
 		}
 	}
 }

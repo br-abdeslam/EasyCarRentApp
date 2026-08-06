@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Easy Car Rent API",
-    "description": "Category and vehicle CRUD requests for the Easy Car Rent backend. Development-only Basic Auth credentials are provided through collection variables.",
+    "description": "Requests for the Easy Car Rent backend covering categories, vehicles, customers, rentals, payments and maintenance records, including the read endpoints the desktop dashboard aggregates. Basic Auth is applied through collection variables; set adminPassword and userPassword locally to match the backend development accounts (their values are intentionally left blank here so no credential is committed).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -14,9 +14,9 @@
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080" },
     { "key": "adminUsername", "value": "admin" },
-    { "key": "adminPassword", "value": "admin123" },
+    { "key": "adminPassword", "value": "", "description": "Set locally to the backend ADMIN development account password; intentionally left blank so no credential is committed." },
     { "key": "userUsername", "value": "user" },
-    { "key": "userPassword", "value": "user123" },
+    { "key": "userPassword", "value": "", "description": "Set locally to the backend USER development account password; intentionally left blank so no credential is committed." },
     { "key": "categoryId", "value": "" },
     { "key": "vehicleId", "value": "" },
     { "key": "customerId", "value": "" },

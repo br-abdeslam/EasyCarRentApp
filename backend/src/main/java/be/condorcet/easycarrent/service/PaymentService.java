@@ -20,12 +20,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Business logic for payments: reads and creation.
+ * Business logic for payments: reads, creation, lifecycle transitions and deletion.
  *
  * <p>A payment can only be created for an ACTIVE or COMPLETED rental, and at
  * most one payment may exist per rental. The amount is derived from the rental
- * total; the client never supplies it. Payment lifecycle transitions are handled
- * by a later step and are not implemented here.
+ * total; the client never supplies it. The lifecycle transitions (pay, fail,
+ * retry, refund) and deletion enforce the payment status rules here: pay and fail
+ * require PENDING, retry requires FAILED, refund requires PAID, and a PAID or
+ * REFUNDED payment cannot be deleted.
  */
 @Service
 @Transactional(readOnly = true)

@@ -3,20 +3,21 @@ package be.condorcet.easycarrent.desktop.navigation;
 /**
  * The main navigable sections of the desktop application shell.
  *
- * <p>Each value carries only display metadata (a title and a short description)
- * used by the placeholder view. The descriptions state that each section is
- * prepared for future functionality; no section performs API calls or holds
- * domain data yet. This enum depends on no JavaFX controls.</p>
+ * <p>Each value carries only display metadata: a title used by the sidebar and a
+ * short description of what the section does. Every section now routes to its own
+ * backend-connected view; the description is used by the reusable placeholder view,
+ * which remains only as a defensive fallback. This enum depends on no JavaFX
+ * controls.</p>
  */
 public enum MainSection {
 
-	DASHBOARD("Dashboard", "Application overview will be available here."),
-	VEHICLE_CATEGORIES("Vehicle Categories", "Vehicle category management will be available here."),
-	VEHICLES("Vehicles", "Vehicle management will be available here."),
-	CUSTOMERS("Customers", "Customer management will be available here."),
-	RENTALS("Rentals", "Rental management will be available here."),
-	PAYMENTS("Payments", "Payment management will be available here."),
-	MAINTENANCE("Maintenance", "Maintenance management will be available here.");
+	DASHBOARD("Dashboard", "A read-only overview of the current operational data."),
+	VEHICLE_CATEGORIES("Vehicle Categories", "Manage the vehicle categories."),
+	VEHICLES("Vehicles", "Manage the vehicle fleet."),
+	CUSTOMERS("Customers", "Manage the customers who can rent vehicles."),
+	RENTALS("Rentals", "Book vehicles and manage each rental's lifecycle."),
+	PAYMENTS("Payments", "Record and manage the payment for each rental."),
+	MAINTENANCE("Maintenance", "Schedule and track maintenance for each vehicle.");
 
 	private final String title;
 	private final String description;

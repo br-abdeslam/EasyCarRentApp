@@ -93,7 +93,7 @@ public final class ViewManager {
 		FXMLLoader loader = new FXMLLoader(requireResource(ViewManager.LOGIN_FXML));
 		Parent root = load(loader);
 		LoginController controller = loader.getController();
-		controller.init(authenticationService, sessionManager, this);
+		controller.init(authenticationService, this);
 		return root;
 	}
 

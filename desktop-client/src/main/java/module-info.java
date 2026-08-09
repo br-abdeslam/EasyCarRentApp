@@ -4,6 +4,7 @@ module be.condorcet.easycarrent.desktop {
 	requires javafx.fxml;
 
 	requires java.net.http;
+	requires static java.xml;
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.datatype.jsr310;
 

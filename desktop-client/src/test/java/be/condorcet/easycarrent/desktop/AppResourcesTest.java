@@ -394,7 +394,6 @@ class AppResourcesTest {
 
 	@Test
 	void rentalsFxmlUsesComboBoxesForCustomerAndVehicle() throws Exception {
-		String fxml = readResource(RENTALS_FXML);
 		String customerLine = lineContaining(RENTALS_FXML, "fx:id=\"customerComboBox\"");
 		String vehicleLine = lineContaining(RENTALS_FXML, "fx:id=\"vehicleComboBox\"");
 		assertTrue(customerLine.contains("<ComboBox"), "the customer selector must be a ComboBox");

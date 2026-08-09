@@ -56,101 +56,109 @@ class DashboardServiceTest {
 
 	@Test
 	void loadsAllSixSectionsAndInvokesEveryEndpoint() {
-		RoutingHttpClient http = new RoutingHttpClient()
-				.ok("/api/vehicles", VEHICLES_JSON)
-				.ok("/api/payments", PAYMENTS_JSON);
+		try (RoutingHttpClient http = new RoutingHttpClient()) {
+			http.ok("/api/vehicles", VEHICLES_JSON)
+					.ok("/api/payments", PAYMENTS_JSON);
 
-		DashboardLoadResult result = service(http, authenticatedSession()).load().join();
+			DashboardLoadResult result = service(http, authenticatedSession()).load().join();
 
-		assertEquals(6, http.callCount(), "every source endpoint must be queried");
-		assertTrue(result.allAvailable());
-		assertEquals(1, result.vehicles().records().size());
-		assertEquals(1, result.payments().records().size());
+			assertEquals(6, http.callCount(), "every source endpoint must be queried");
+			assertTrue(result.allAvailable());
+			assertEquals(1, result.vehicles().records().size());
+			assertEquals(1, result.payments().records().size());
+		}
 	}
 
 	@Test
 	void completeEmptySuccessMarksEverySectionAvailableAndEmpty() {
-		DashboardLoadResult result = service(new RoutingHttpClient(), authenticatedSession()).load().join();
+		try (RoutingHttpClient http = new RoutingHttpClient()) {
+			DashboardLoadResult result = service(http, authenticatedSession()).load().join();
 
-		assertTrue(result.allAvailable());
-		assertTrue(result.categories().records().isEmpty());
-		assertTrue(result.vehicles().records().isEmpty());
-		assertTrue(result.customers().records().isEmpty());
-		assertTrue(result.rentals().records().isEmpty());
-		assertTrue(result.payments().records().isEmpty());
-		assertTrue(result.maintenance().records().isEmpty());
+			assertTrue(result.allAvailable());
+			assertTrue(result.categories().records().isEmpty());
+			assertTrue(result.vehicles().records().isEmpty());
+			assertTrue(result.customers().records().isEmpty());
+			assertTrue(result.rentals().records().isEmpty());
+			assertTrue(result.payments().records().isEmpty());
+			assertTrue(result.maintenance().records().isEmpty());
+		}
 	}
 
 	@Test
 	void oneFailedSourceProducesAPartialResultWithWorkingSectionsAvailable() {
-		RoutingHttpClient http = new RoutingHttpClient()
-				.fail("/api/vehicles", new ConnectException("refused"));
+		try (RoutingHttpClient http = new RoutingHttpClient()) {
+			http.fail("/api/vehicles", new ConnectException("refused"));
 
-		DashboardLoadResult result = service(http, authenticatedSession()).load().join();
+			DashboardLoadResult result = service(http, authenticatedSession()).load().join();
 
-		assertFalse(result.allAvailable());
-		assertTrue(result.anyAvailable());
-		assertFalse(result.vehicles().isAvailable());
-		assertTrue(result.customers().isAvailable(), "a working section stays available");
-		assertTrue(result.payments().isAvailable());
-		assertEquals(java.util.List.of("Vehicles"), result.unavailableSectionNames());
+			assertFalse(result.allAvailable());
+			assertTrue(result.anyAvailable());
+			assertFalse(result.vehicles().isAvailable());
+			assertTrue(result.customers().isAvailable(), "a working section stays available");
+			assertTrue(result.payments().isAvailable());
+			assertEquals(java.util.List.of("Vehicles"), result.unavailableSectionNames());
+		}
 	}
 
 	@Test
 	void severalFailedSourcesProduceAPartialResult() {
-		RoutingHttpClient http = new RoutingHttpClient()
-				.fail("/api/vehicles", new ConnectException("refused"))
-				.status("/api/payments", 500, "{\"status\":500,\"message\":\"boom\"}");
+		try (RoutingHttpClient http = new RoutingHttpClient()) {
+			http.fail("/api/vehicles", new ConnectException("refused"))
+					.status("/api/payments", 500, "{\"status\":500,\"message\":\"boom\"}");
 
-		DashboardLoadResult result = service(http, authenticatedSession()).load().join();
+			DashboardLoadResult result = service(http, authenticatedSession()).load().join();
 
-		assertFalse(result.allAvailable());
-		assertTrue(result.anyAvailable());
-		assertFalse(result.vehicles().isAvailable());
-		assertFalse(result.payments().isAvailable());
-		assertEquals(java.util.List.of("Vehicles", "Payments"), result.unavailableSectionNames());
+			assertFalse(result.allAvailable());
+			assertTrue(result.anyAvailable());
+			assertFalse(result.vehicles().isAvailable());
+			assertFalse(result.payments().isAvailable());
+			assertEquals(java.util.List.of("Vehicles", "Payments"), result.unavailableSectionNames());
+		}
 	}
 
 	@Test
 	void allFailedSourcesProduceAnUnavailableResult() {
-		RoutingHttpClient http = new RoutingHttpClient()
-				.fail("/api/categories", new ConnectException("x"))
-				.fail("/api/vehicles", new ConnectException("x"))
-				.fail("/api/customers", new ConnectException("x"))
-				.fail("/api/rentals", new ConnectException("x"))
-				.fail("/api/payments", new ConnectException("x"))
-				.fail("/api/maintenance-records", new ConnectException("x"));
+		try (RoutingHttpClient http = new RoutingHttpClient()) {
+			http.fail("/api/categories", new ConnectException("x"))
+					.fail("/api/vehicles", new ConnectException("x"))
+					.fail("/api/customers", new ConnectException("x"))
+					.fail("/api/rentals", new ConnectException("x"))
+					.fail("/api/payments", new ConnectException("x"))
+					.fail("/api/maintenance-records", new ConnectException("x"));
 
-		DashboardLoadResult result = service(http, authenticatedSession()).load().join();
+			DashboardLoadResult result = service(http, authenticatedSession()).load().join();
 
-		assertTrue(result.allUnavailable());
-		assertFalse(result.anyAvailable());
+			assertTrue(result.allUnavailable());
+			assertFalse(result.anyAvailable());
+		}
 	}
 
 	@Test
 	void apiRequestFailureBecomesASafeSectionFailure() {
-		RoutingHttpClient http = new RoutingHttpClient()
-				.status("/api/vehicles", 500, "{\"status\":500,\"message\":\"boom\"}");
+		try (RoutingHttpClient http = new RoutingHttpClient()) {
+			http.status("/api/vehicles", 500, "{\"status\":500,\"message\":\"boom\"}");
 
-		DashboardLoadResult result = service(http, authenticatedSession()).load().join();
+			DashboardLoadResult result = service(http, authenticatedSession()).load().join();
 
-		assertFalse(result.vehicles().isAvailable());
-		String message = result.vehicles().failureMessage();
-		assertTrue(message.toLowerCase().contains("could not be loaded"));
-		assertSafeMessage(message);
+			assertFalse(result.vehicles().isAvailable());
+			String message = result.vehicles().failureMessage();
+			assertTrue(message.toLowerCase().contains("could not be loaded"));
+			assertSafeMessage(message);
+		}
 	}
 
 	@Test
 	void apiConnectionFailureBecomesASafeSectionFailure() {
-		RoutingHttpClient http = new RoutingHttpClient()
-				.fail("/api/customers", new ConnectException("Connection refused"));
+		try (RoutingHttpClient http = new RoutingHttpClient()) {
+			http.fail("/api/customers", new ConnectException("Connection refused"));
 
-		DashboardLoadResult result = service(http, authenticatedSession()).load().join();
+			DashboardLoadResult result = service(http, authenticatedSession()).load().join();
 
-		assertFalse(result.customers().isAvailable());
-		String message = result.customers().failureMessage();
-		assertTrue(message.toLowerCase().contains("unavailable"));
-		assertSafeMessage(message);
+			assertFalse(result.customers().isAvailable());
+			String message = result.customers().failureMessage();
+			assertTrue(message.toLowerCase().contains("unavailable"));
+			assertSafeMessage(message);
+		}
 	}
 
 	private static void assertSafeMessage(String message) {

@@ -23,15 +23,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Business logic for maintenance records: reads and creation.
+ * Business logic for maintenance records: reads, creation, lifecycle transitions
+ * and deletion.
  *
  * <p>A maintenance record may be created for any vehicle that is not
  * {@link VehicleStatus#INACTIVE}, provided the requested period does not overlap
  * a blocking maintenance record ({@code PLANNED}/{@code IN_PROGRESS}) or a
  * blocking rental ({@code PLANNED}/{@code ACTIVE}) on the same vehicle. The cost
- * is normalized to scale 2 by the backend. Lifecycle transitions, vehicle-status
- * synchronization and deletion are handled by later steps and are not
- * implemented here.
+ * is normalized to scale 2 by the backend. Starting a record moves it to
+ * {@code IN_PROGRESS} and its vehicle to {@code MAINTENANCE}, completing it moves
+ * the record to {@code COMPLETED} and the vehicle back to {@code AVAILABLE}, and a
+ * record can only be deleted while {@code PLANNED} — all enforced here.
  *
  * <p><strong>Concurrency (documented MVP limitation):</strong> vehicle
  * resolution, both overlap checks and the insert run in one write transaction,

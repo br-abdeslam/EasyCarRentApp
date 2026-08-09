@@ -3,7 +3,6 @@ package be.condorcet.easycarrent.desktop.view;
 import be.condorcet.easycarrent.desktop.auth.BasicCredentials;
 import be.condorcet.easycarrent.desktop.service.AuthenticationResult;
 import be.condorcet.easycarrent.desktop.service.AuthenticationService;
-import be.condorcet.easycarrent.desktop.session.SessionManager;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -47,14 +46,11 @@ public class LoginController {
 	private ProgressIndicator progressIndicator;
 
 	private AuthenticationService authenticationService;
-	private SessionManager sessionManager;
 	private ViewManager viewManager;
 
 	/** Supplies collaborators after {@code FXMLLoader.load()}. */
-	public void init(AuthenticationService authenticationService, SessionManager sessionManager,
-			ViewManager viewManager) {
+	public void init(AuthenticationService authenticationService, ViewManager viewManager) {
 		this.authenticationService = authenticationService;
-		this.sessionManager = sessionManager;
 		this.viewManager = viewManager;
 	}
 

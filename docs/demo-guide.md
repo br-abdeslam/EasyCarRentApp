@@ -1,30 +1,74 @@
 # Demonstration guide
 
 A reproducible walkthrough for demonstrating Easy Car Rent. It uses only fictional,
-disposable data and cleans up afterwards. Never enter real personal data and never
-reproduce account passwords in a recording or document.
+disposable data and cleans up afterwards. Never enter real personal data. Sign in with
+the predefined local development accounts documented below; these are intentionally
+public local development/demonstration credentials, not production secrets.
 
 ## 1. Prepare the environment
 
-1. Start the database:
+1. Start the database. The named Docker volume is local to each Docker host and is
+   not transferred through Git, so on a fresh clone this starts an empty database:
    ```powershell
    docker compose -f database/docker-compose.yml up -d
    ```
-2. Start the backend (leave it running):
-   ```powershell
-   cd backend
-   .\mvnw.cmd spring-boot:run
-   ```
-   Wait until it logs that it started on port 8080.
+2. Start the backend (leave it running). Choose one of:
+   - **Normal startup** (does not insert any demo data):
+     ```powershell
+     cd backend
+     .\mvnw.cmd spring-boot:run
+     ```
+   - **Demo startup** (inserts the fictional dataset, only when the database is
+     empty) — recommended for a fresh database so every screen has content:
+     ```powershell
+     cd backend
+     .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"
+     ```
+   Wait until it logs that it started on port 8080. Under the demo profile the log
+   also reports either that the demo data was initialized or that initialization was
+   skipped because the database is not empty.
 3. In a second terminal, start the desktop client:
    ```powershell
    cd desktop-client
    mvn javafx:run
    ```
 
+### What the demo profile creates
+
+Started against an empty database, the demo profile inserts a compact, coherent and
+entirely fictional dataset through the normal business rules:
+
+- **4 vehicle categories** (Economy, Compact, SUV, Premium);
+- **8 vehicles** with `DEMO-###` registrations — several remain **AVAILABLE**, one is
+  **RENTED** and one is under **MAINTENANCE**;
+- **6 customers** with `@example.invalid` emails and `DEMO-LIC-###` licences (one
+  customer is left free of any rental so it stays fully disposable);
+- **6 rentals** covering PLANNED, ACTIVE, COMPLETED and CANCELLED, with the total
+  price calculated by the backend;
+- **4 payments** covering PENDING, PAID, FAILED and REFUNDED, with amounts derived by
+  the backend;
+- **3 maintenance records** covering PLANNED, IN_PROGRESS and COMPLETED.
+
+The dataset intentionally leaves several vehicles available, one disposable planned
+rental and one disposable planned maintenance record, so the running application
+stays interactive. The demo profile only ever inserts into an empty database: if any
+business data already exists it skips completely and changes nothing, and starting the
+backend again with the demo profile against the same database creates no duplicates.
+
 ## 2. Authentication and shell
 
-1. On the login screen, sign in with the **USER** development account.
+Two predefined local development accounts are available (HTTP Basic):
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `user` | `user123` | USER |
+| `admin` | `admin123` | ADMIN |
+
+These are intentionally public local development/demonstration credentials, defined in
+the backend security configuration; they must never be used in production. `user` shows
+the standard role and `admin` shows administrative operations.
+
+1. On the login screen, sign in with the **USER** development account (`user`).
 2. Show the header (username, role, backend-connected indicator) and the sidebar.
 3. Note that the **Dashboard** opens by default.
 4. Demonstrate **Log out**, then sign back in — this shows the session is cleared
@@ -123,11 +167,24 @@ A rental or maintenance record that has been started (and so cannot be deleted)
 should not be created for a live demonstration; the corresponding lifecycle is
 covered by the automated tests instead.
 
+When demonstrating with the seeded dataset, prefer the disposable resources — the
+available vehicles, the planned rental and the planned maintenance record — and leave
+the completed and refunded history as-is; those records are retained by design and
+cannot be removed.
+
 ## 8. Stop the environment
 
+Stop the desktop client and the backend (Ctrl+C in their terminals), then stop the
+database while **keeping** its data:
+
 ```powershell
-# stop the desktop client and the backend (Ctrl+C in their terminals), then:
 docker compose -f database/docker-compose.yml down
 ```
 
-The named database volume is preserved unless you add `-v`.
+`down` on its own preserves the named database volume, so the next startup keeps the
+same data.
+
+> **Warning — destructive.** Adding `-v` (`docker compose ... down -v`) deletes the
+> named database volume and therefore all local data. Only use it when you
+> deliberately want a clean, empty database (for example to reproduce the demo
+> dataset from scratch), and understand that it cannot be undone.

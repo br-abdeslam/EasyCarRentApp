@@ -174,3 +174,26 @@ flowchart LR
     AG --> SNAP[DashboardSnapshot - counts, status breakdowns, amounts]
     SNAP --> DC
 ```
+
+## Demonstration data startup (demo profile)
+
+For demonstrations, an optional `demo` profile can populate a fresh database with a
+fictional dataset. The initializer is profile-gated, runs after the schema is
+available, seeds only an empty database, and is not a production migration mechanism.
+
+```mermaid
+flowchart LR
+    PG[(Fresh PostgreSQL)] --> HB[Hibernate schema - ddl-auto=update]
+    HB --> RUN[DemoDataInitializer - ApplicationRunner, demo profile only]
+    RUN --> GUARD{All tables empty?}
+    GUARD -->|no| SKIP[Skip - leave data untouched]
+    GUARD -->|yes| SEED[DemoDataSeeder - one transaction, via domain services]
+    SEED --> DATA[Fictional demonstration records]
+```
+
+- **Profile-gated:** the initializer, seeder and their clock exist only under the
+  `demo` profile; the default startup registers none of them.
+- **Empty-only and idempotent:** a non-empty database is detected and skipped, so a
+  repeated demo startup creates no duplicates and never resets existing data.
+- **Rules preserved:** records are created through the existing domain services, so the
+  same validation, overlap, price/amount and vehicle-status rules apply.

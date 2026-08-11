@@ -73,6 +73,43 @@ Easy-Car-Rent-App/
 - **Docker Desktop** — for the PostgreSQL database.
 - **Git**.
 
+## Fresh local setup
+
+The steps below have been verified from a fresh clone on a separate computer. Run them
+in order from the repository root.
+
+1. Clone the repository.
+2. Ensure **Java 25** is installed (`java -version`).
+3. Start PostgreSQL with Docker Compose:
+   ```powershell
+   docker compose -f .\database\docker-compose.yml up -d
+   ```
+4. Optionally verify the container is running:
+   ```powershell
+   docker ps
+   ```
+5. Run the backend tests (PostgreSQL must already be running — see
+   [Running tests](#running-tests)):
+   ```powershell
+   cd backend
+   .\mvnw.cmd clean verify
+   ```
+6. Start the backend. Normal startup (no demo data):
+   ```powershell
+   .\mvnw.cmd spring-boot:run
+   ```
+   or with the reproducible demo data (recommended for a populated environment right
+   after a fresh clone):
+   ```powershell
+   .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"
+   ```
+7. Start the JavaFX desktop client from another terminal:
+   ```powershell
+   cd desktop-client
+   mvn javafx:run
+   ```
+8. Sign in with one of the documented [development accounts](#development-accounts).
+
 ## Starting PostgreSQL
 
 From the repository root, using the provided Compose file (non-destructive; reuses
@@ -92,7 +129,8 @@ cd backend
 ```
 
 The API starts on `http://localhost:8080`. `GET /api/ping` is public; every other
-endpoint requires authentication.
+endpoint requires authentication. This normal startup does **not** create demo data;
+see [Demo data](#demo-data) for the demo-profile startup.
 
 ## Starting the desktop client
 
@@ -106,16 +144,77 @@ mvn javafx:run
 The client opens the login screen. See `desktop-client/README.md` for the full
 desktop feature reference.
 
-## Authentication
+## Demo data
 
-The backend configures two **development-only** in-memory accounts, identified by
-the usernames `user` (role `USER`) and `admin` (role `ADMIN`). These accounts are
-part of the backend's local development configuration and are for local and course
-use only — they must never be used in production, and no production credential,
-token, or private key is used anywhere in the project. Their passwords are **not
-reproduced** in this README, in the delivery documentation, or in the Postman
-collection (its password variables are intentionally left blank); set them locally
-to match the backend development configuration.
+A fresh database starts empty. A dedicated `demo` profile can populate it with a
+compact, entirely fictional demonstration dataset so every screen has meaningful
+content on another computer.
+
+Normal startup does **not** insert any demo data:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+Demo startup inserts the fictional dataset **only when the database is empty**:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo"
+```
+
+The demo initializer:
+
+- inserts the dataset only when every business table is empty;
+- skips initialization when any business data already exists;
+- never resets, deletes or overwrites an existing database;
+- creates no duplicates when the backend is started again against the same database.
+
+The dataset covers all six domains — vehicle categories, vehicles, customers,
+rentals, payments and maintenance records — with several vehicles kept available
+for interactive use. All values are fictional (for example `DEMO-001` registrations,
+`@example.invalid` emails and `DEMO-LIC-001` licence numbers).
+
+### Fresh-clone workflow
+
+See [Fresh local setup](#fresh-local-setup) for the full ordered steps. In short: start
+PostgreSQL, start the backend with the demo profile, then start the desktop client and
+sign in with a [development account](#development-accounts).
+
+The PostgreSQL data lives in a Docker named volume that is local to each Docker host
+and is **not** transferred through Git, so every clone begins with an empty database
+and reproduces the dataset from the demo profile rather than from copied records.
+`docker compose down` stops the container but preserves that named volume; adding `-v`
+(`docker compose down -v`) is **destructive** — it deletes the volume and all local
+data. See `docs/demo-guide.md` for the full walkthrough.
+
+## Development accounts
+
+The backend defines two predefined accounts, used with HTTP Basic authentication, so a
+fresh local environment can be signed into without inspecting the source. They are
+configured in the backend development security configuration
+(`backend/src/main/java/be/condorcet/easycarrent/config/SecurityConfig.java`).
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `user` | `user123` | USER |
+| `admin` | `admin123` | ADMIN |
+
+These credentials are intentionally predefined for local development and demonstration
+only. They must not be reused or deployed as production credentials.
+
+- `user` demonstrates the standard application role: reads across every section, plus
+  rental and payment operations.
+- `admin` demonstrates the administrative role: category, vehicle, customer and
+  maintenance management, deletions and payment refunds.
+
+The documented `user` and `admin` values are the only credentials in the repository and
+are intentionally public, local development credentials — not secrets. No production
+credentials, external tokens, private keys or `Authorization` header values are
+included, and no real personal or business data is used. A production deployment must
+supply a different authentication configuration. `GET /api/ping` is public; every other
+endpoint requires authentication.
 
 ## Roles and permissions
 
@@ -162,7 +261,15 @@ Verified rules enforced by the backend:
 
 ## Running tests
 
-Backend (requires the PostgreSQL container running for the full context test):
+**PostgreSQL must be running before the complete backend test suite is executed.** The
+application-context test uses the configured PostgreSQL datasource, so start the
+database first:
+
+```powershell
+docker compose -f .\database\docker-compose.yml up -d
+```
+
+Backend:
 
 ```powershell
 cd backend
@@ -176,9 +283,9 @@ cd desktop-client
 mvn clean verify
 ```
 
-Current verified totals from the final baseline (Java 25):
+Current verified totals (Java 25):
 
-- **Backend:** 506 tests — 0 failures, 0 errors, 0 skipped.
+- **Backend:** 518 tests — 0 failures, 0 errors, 0 skipped.
 - **Desktop:** 581 tests — 0 failures, 0 errors, 0 skipped.
 
 ## Error handling
@@ -202,7 +309,7 @@ never showing raw JSON, exception names, or credentials.
 ## Known limitations
 
 - Authentication uses backend development accounts and HTTP Basic; it is intended
-  for local and course use, not production.
+  for local development and demonstration use, not production.
 - There is no installer or packaged distribution; the client is launched with
   `mvn javafx:run`.
 - The dashboard refreshes only on demand (manual Refresh); there is no automatic
